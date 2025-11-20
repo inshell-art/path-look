@@ -1,0 +1,11 @@
+{
+    "devnet": {
+        "PATHSVG_class_hash": "0x3946d0eddd52da33d6673b9279933fd04c8c9bcd66e2ac6caab658c688194ae",
+        "PATHSVG_contract_address": "0x04add2e03e6c61bde38205a88f2f0bc5da68f46d8d5c101bd3629d6d9436684c",
+        "other_contract": ""
+    },
+    "testnet": {
+        "PATH_SVG_class_hash": "",
+        "other_contract": ""
+    }
+}
