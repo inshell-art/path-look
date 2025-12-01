@@ -1,0 +1,10 @@
+{
+  "predeployed": {
+    "address": "0x011420d3db04de60d69356f21c83f561eabc8c0ab12caee3b77b06834b78977e",
+    "private_key": "0x00000000000000000000000000000000130949d2c8a7b612e43254921cc0a83f",
+    "public_key": "0x0617ec980e83eabd48be05570f9966d1ee91667f095daaff745718305b29c634",
+    "deployed": true,
+    "legacy": false,
+    "class_hash": "0x04c6d6cf894f8bc96bb9c525e6853e5483177841f7388f74a46cfda6f028c755"
+  }
+}

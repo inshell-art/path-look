@@ -2,13 +2,31 @@
 mod PATH_SVG {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArrayTrait;
-    use path_svg::random_utils::pseudo_random_range;
+    use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use path_svg::random_utils;
+
+    const LABEL_STEP_COUNT: felt252 = 'STEP';
+    const LABEL_SHARPNESS: felt252 = 'SHRP';
+    const LABEL_PADDING: felt252 = 'PADD';
+    const LABEL_TARGET_X: felt252 = 'TRGX';
+    const LABEL_TARGET_Y: felt252 = 'TRGY';
+    const LABEL_THOUGHT_DX: felt252 = 'THDX';
+    const LABEL_THOUGHT_DY: felt252 = 'THDY';
+    const LABEL_WILL_DX: felt252 = 'WIDX';
+    const LABEL_WILL_DY: felt252 = 'WIDY';
+    const LABEL_AWA_DX: felt252 = 'AWDX';
+    const LABEL_AWA_DY: felt252 = 'AWDY';
 
     #[storage]
-    struct Storage {}
+    struct Storage {
+        pprf_address: ContractAddress,
+    }
 
     #[constructor]
-    fn constructor(ref self: ContractState) {}
+    fn constructor(ref self: ContractState, pprf_address: ContractAddress) {
+        self.pprf_address.write(pprf_address);
+    }
 
     #[derive(Copy, Drop)]
     struct Step {
@@ -28,33 +46,45 @@ mod PATH_SVG {
             const WIDTH: u32 = 1024;
             const HEIGHT: u32 = 1024;
 
-            let mut rand_index: u32 = 0;
+            let step_number = self._random_range(token_id, LABEL_STEP_COUNT, 0, 1, 50);
 
-            let n = pseudo_random_range(token_id, rand_index, 1, 7);
-            rand_index = rand_index + 1;
-            let step_number = self._pow2(n);
-
-            let s = pseudo_random_range(token_id, rand_index, 1, 10);
-            rand_index = rand_index + 1;
-            let sharpness = self._pow2(s);
+            let sharpness = self._random_range(token_id, LABEL_SHARPNESS, 0, 1, 8);
 
             let stroke_w = self._max_u32(1, self._round_div(100, step_number));
 
-            let (targets, mut rand_index) = self
-                ._find_targets(token_id, rand_index, WIDTH, HEIGHT, step_number);
+            let targets = self._find_targets(token_id, WIDTH, HEIGHT, step_number);
 
-            let (thought_steps, mut rand_index) = self
-                ._find_steps(token_id, rand_index, @targets, WIDTH, HEIGHT);
+            let thought_steps = self
+                ._find_steps(
+                    token_id,
+                    @targets,
+                    WIDTH,
+                    HEIGHT,
+                    LABEL_THOUGHT_DX,
+                    LABEL_THOUGHT_DY,
+                );
             let thought_path = self._to_cubic_bezier(@thought_steps, sharpness);
 
-            let (will_steps, rand_index_next) = self
-                ._find_steps(token_id, rand_index, @targets, WIDTH, HEIGHT);
-            rand_index = rand_index_next;
+            let will_steps = self
+                ._find_steps(
+                    token_id,
+                    @targets,
+                    WIDTH,
+                    HEIGHT,
+                    LABEL_WILL_DX,
+                    LABEL_WILL_DY,
+                );
             let will_path = self._to_cubic_bezier(@will_steps, sharpness);
 
-            let (awa_steps, rand_index_next) = self
-                ._find_steps(token_id, rand_index, @targets, WIDTH, HEIGHT);
-            rand_index = rand_index_next;
+            let awa_steps = self
+                ._find_steps(
+                    token_id,
+                    @targets,
+                    WIDTH,
+                    HEIGHT,
+                    LABEL_AWA_DX,
+                    LABEL_AWA_DY,
+                );
             let awa_path = self._to_cubic_bezier(@awa_steps, sharpness);
 
             let all_minted = if_thought_minted && if_will_minted && if_awa_minted;
@@ -184,11 +214,8 @@ mod PATH_SVG {
             const WIDTH: u32 = 1024;
             const HEIGHT: u32 = 1024;
 
-            let mut rand_index: u32 = 0;
-            let n = pseudo_random_range(token_id, rand_index, 1, 7);
-            rand_index = rand_index + 1;
-            let step_number = self._pow2(n);
-            let (targets, _) = self._find_targets(token_id, rand_index, WIDTH, HEIGHT, step_number);
+            let step_number = self._random_range(token_id, LABEL_STEP_COUNT, 0, 1, 50);
+            let targets = self._find_targets(token_id, WIDTH, HEIGHT, step_number);
             let point_count = targets.len().try_into().unwrap();
 
             let mut metadata: ByteArray = Default::default();
@@ -228,6 +255,18 @@ mod PATH_SVG {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn _random_range(
+            self: @ContractState,
+            token_id: felt252,
+            label: felt252,
+            occurrence: u32,
+            min: u32,
+            max: u32,
+        ) -> u32 {
+            let address = self.pprf_address.read();
+            random_utils::pseudo_random_range(address, token_id, label, occurrence, min, max)
+        }
+
         fn _pow2(self: @ContractState, exponent: u32) -> u32 {
             let mut result = 1_u32;
             let mut i = 0_u32;
@@ -257,15 +296,13 @@ mod PATH_SVG {
         fn _find_targets(
             self: @ContractState,
             token_id: felt252,
-            mut rand_index: u32,
             width: u32,
             height: u32,
             interior_count: u32,
-        ) -> (Array<Step>, u32) {
+        ) -> Array<Step> {
             let padding_min = width / 10_u32;
             let padding_max = width / 3_u32;
-            let padding = pseudo_random_range(token_id, rand_index, padding_min, padding_max);
-            rand_index = rand_index + 1_u32;
+            let padding = self._random_range(token_id, LABEL_PADDING, 0, padding_min, padding_max);
 
             let edge_pad = padding;
             let inner_w = width - 2_u32 * edge_pad;
@@ -274,10 +311,9 @@ mod PATH_SVG {
             let mut interior: Array<Step> = array![];
             let target_len_goal: usize = interior_count.try_into().unwrap();
             while interior.len() < target_len_goal {
-                let x_offset = pseudo_random_range(token_id, rand_index, 0_u32, inner_w);
-                rand_index = rand_index + 1_u32;
-                let y_offset = pseudo_random_range(token_id, rand_index, 0_u32, inner_h);
-                rand_index = rand_index + 1_u32;
+                let idx: u32 = interior.len().try_into().unwrap();
+                let x_offset = self._random_range(token_id, LABEL_TARGET_X, idx, 0_u32, inner_w);
+                let y_offset = self._random_range(token_id, LABEL_TARGET_Y, idx, 0_u32, inner_h);
 
                 let x_val: u32 = edge_pad + x_offset;
                 let y_val: u32 = edge_pad + y_offset;
@@ -301,17 +337,18 @@ mod PATH_SVG {
             let end_y: i128 = offset;
             points.append(Step { x: end_x, y: end_y });
 
-            (points, rand_index)
+            points
         }
 
         fn _find_steps(
             self: @ContractState,
             token_id: felt252,
-            mut rand_index: u32,
             targets: @Array<Step>,
             width: u32,
             height: u32,
-        ) -> (Array<Step>, u32) {
+            dx_label: felt252,
+            dy_label: felt252,
+        ) -> Array<Step> {
             let mut steps: Array<Step> = array![];
             let len = targets.len();
             let max_dx = width / 100_u32;
@@ -322,10 +359,9 @@ mod PATH_SVG {
             let mut i: usize = 0_usize;
             while i < len {
                 let target = *targets.at(i);
-                let dx = pseudo_random_range(token_id, rand_index, 0_u32, max_dx);
-                rand_index = rand_index + 1_u32;
-                let dy = pseudo_random_range(token_id, rand_index, 0_u32, max_dy);
-                rand_index = rand_index + 1_u32;
+                let occurrence: u32 = i.try_into().unwrap();
+                let dx = self._random_range(token_id, dx_label, occurrence, 0_u32, max_dx);
+                let dy = self._random_range(token_id, dy_label, occurrence, 0_u32, max_dy);
 
                 let x = self._clamp_i128(target.x + dx.into(), 0_i128, max_x);
                 let y = self._clamp_i128(target.y + dy.into(), 0_i128, max_y);
@@ -335,7 +371,7 @@ mod PATH_SVG {
                 i = i + 1_usize;
             }
 
-            (steps, rand_index)
+            steps
         }
 
         fn _to_cubic_bezier(

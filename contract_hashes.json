@@ -1,7 +1,8 @@
 {
     "devnet": {
-        "PATHSVG_class_hash": "0x3946d0eddd52da33d6673b9279933fd04c8c9bcd66e2ac6caab658c688194ae",
-        "PATHSVG_contract_address": "0x04add2e03e6c61bde38205a88f2f0bc5da68f46d8d5c101bd3629d6d9436684c",
+        "PATHSVG_class_hash": "0x7976ff9632234f72d5dc0c4eed748fee8ebd73abe2c4dfedb29f6fa8ee10843",
+        "PATHSVG_contract_address": "0x00c622589945fae236775e3f0a44c3c793b2a39aaad32a661decce143f995df7",
+        "pprf_contract_address": "0x02ad21252b5a51195e0e46b0d58f819dee5e4edcbe5450c0ff08900f3e380384",
         "other_contract": ""
     },
     "testnet": {

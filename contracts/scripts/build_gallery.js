@@ -10,11 +10,15 @@
 const fs = require("fs");
 const path = require("path");
 
+const SCRIPT_DIR = __dirname;
+const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..", "..");
+
 const DEFAULT_TITLE = "PATH SVG Gallery";
 const DEFAULT_PATTERN = "*.svg";
+const DEFAULT_TILE = 160;
 
 function printUsage() {
-  console.log(`Usage: node scripts/build_gallery.js <source> [options]
+  console.log(`Usage: node contracts/scripts/build_gallery.js <source> [options]
 
 Options:
   -o, --output <file>     Path to the gallery HTML file (default: <source>/gallery.html)
@@ -121,6 +125,16 @@ function collectFiles(baseDir, patternRegex, recursive, relativePrefix = ".") {
   return results;
 }
 
+function resolvePath(value) {
+  if (!value) {
+    return null;
+  }
+  if (path.isAbsolute(value)) {
+    return value;
+  }
+  return path.resolve(PROJECT_ROOT, value);
+}
+
 function escapeHtml(value) {
   return value
     .replace(/&/g, "&amp;")
@@ -130,8 +144,9 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function buildTile(index, filePath, relSrc) {
-  const label = `${String(index).padStart(2, "0")} · ${path.basename(filePath)}`;
+function buildTile(filePath, relSrc) {
+  const parsed = path.parse(filePath);
+  const label = parsed.name;
   const safeLabel = escapeHtml(label);
   const safeSrc = escapeHtml(relSrc);
   return `      <figure class="tile">
@@ -158,6 +173,7 @@ function buildHtml(title, tilesMarkup) {
     <title>${escapeHtml(title)}</title>
     <style>
       :root {
+        --tile-size: ${DEFAULT_TILE}px;
         color-scheme: dark;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background: #050505;
@@ -167,51 +183,95 @@ function buildHtml(title, tilesMarkup) {
         margin: 0;
       }
       header {
-        padding: 24px;
+        padding: 18px 24px;
         border-bottom: 1px solid #1b1b1b;
       }
       h1 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 600;
       }
       main {
-        padding: 24px;
+        padding: 16px;
+        display: flex;
+        justify-content: center;
       }
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(var(--tile-size), var(--tile-size)));
+        gap: 12px;
+        margin: 0 auto;
+        justify-content: center;
+        width: fit-content;
+        max-width: 100%;
+        padding: 12px;
       }
       .tile {
-        background: #0c0c0c;
-        border: 1px solid #1f1f1f;
-        border-radius: 12px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        position: relative;
+        background: #050505;
+        border: none;
+        border-radius: 0;
+        overflow: visible;
+        aspect-ratio: 1 / 1;
+        margin: 0;
+        transition: transform 0.2s ease;
+        transform-origin: center;
       }
       .thumb {
+        position: absolute;
+        inset: 0;
         background: #000;
-        padding: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 240px;
+        overflow: hidden;
+        border-radius: 8px;
       }
       .thumb img {
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: contain;
         display: block;
         background: #000;
-        border-radius: 6px;
+        transition: transform 0.25s ease;
+      }
+      .tile:hover {
+        transform: scale(1.15);
+        z-index: 2;
+      }
+      .tile:hover .thumb img {
+        transform: scale(1.15);
       }
       figcaption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
         font-size: 0.8rem;
-        padding: 10px 14px 12px;
-        color: #b5b5b5;
-        border-top: 1px solid #1b1b1b;
+        letter-spacing: 0.03em;
+        color: #f0f0f0;
+        padding: 6px 10px;
+        background: linear-gradient(
+          180deg,
+          rgba(5,5,5,0) 0%,
+          rgba(5,5,5,0.25) 30%,
+          rgba(5,5,5,0.85) 100%
+        );
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .tile:hover figcaption {
+        opacity: 1;
+      }
+      @media (max-width: 900px) {
+        :root { --tile-size: 140px; }
+      }
+      @media (max-width: 600px) {
+        :root { --tile-size: 120px; }
       }
       .empty {
         grid-column: 1 / -1;
@@ -243,24 +303,25 @@ function main() {
     process.exit(1);
   }
 
-  const sourceDir = path.resolve(options.source);
-  if (!fs.existsSync(sourceDir) || !fs.statSync(sourceDir).isDirectory()) {
+  const sourceDir = resolvePath(options.source);
+  if (!sourceDir || !fs.existsSync(sourceDir) || !fs.statSync(sourceDir).isDirectory()) {
     console.error(`Error: ${sourceDir} is not a directory.`);
     process.exit(1);
   }
 
-  const outputPath = path.resolve(
-    options.output || path.join(sourceDir, "gallery.html")
-  );
+  const outputTarget = options.output
+    ? resolvePath(options.output)
+    : path.join(sourceDir, "gallery.html");
+  const outputPath = path.resolve(outputTarget);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
   const patternRegex = globToRegex(options.pattern);
   const files = collectFiles(sourceDir, patternRegex, options.recursive).sort();
 
-  const tiles = files.map((filePath, idx) => {
+  const tiles = files.map((filePath) => {
     const rel = path.relative(path.dirname(outputPath), filePath);
     const relPosix = rel.split(path.sep).join("/");
-    return buildTile(idx + 1, filePath, relPosix);
+    return buildTile(filePath, relPosix);
   });
 
   const htmlContent = buildHtml(options.title, tiles);

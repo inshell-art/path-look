@@ -1,0 +1,111 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg"
+     style="background:#000; isolation:isolate">
+
+<defs>
+<g id="thought-src"
+stroke="rgb(0,0,255)"
+stroke-width="7"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_thought" d="M 0 515
+ C 62 537, 503 736, 562 709
+ C 621 682, 514 269, 532 271
+ C 550 273, 697 677, 727 725
+ C 757 773, 831 739, 798 699
+ C 765 659, 488 389, 433 365
+ C 378 341, 299 471, 299 484
+ C 299 497, 398 487, 433 478
+ C 468 469, 578 437, 616 406
+ C 654 375, 787 158, 772 202
+ C 757 246, 493 758, 477 806
+ C 461 854, 642 690, 624 636
+ C 606 582, 364 368, 319 323
+ C 274 278, 189 180, 223 227
+ C 257 274, 537 711, 626 743
+ C 715 775, 980 539, 1024 513
+">
+</path>
+</g>
+<g id="will-src"
+stroke="rgb(255,0,0)"
+stroke-width="7"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_will" d="M 0 517
+ C 63 539, 506 740, 565 712
+ C 624 684, 509 265, 528 267
+ C 547 269, 703 681, 733 729
+ C 763 777, 834 738, 801 698
+ C 768 658, 495 390, 439 366
+ C 383 342, 296 471, 295 483
+ C 294 495, 398 485, 434 476
+ C 470 467, 584 428, 621 398
+ C 658 368, 781 158, 766 204
+ C 751 250, 501 764, 485 812
+ C 469 860, 643 686, 624 632
+ C 605 578, 361 371, 316 325
+ C 271 279, 183 171, 218 217
+ C 253 263, 544 705, 634 738
+ C 724 771, 981 541, 1024 516
+">
+</path>
+</g>
+<g id="awa-src"
+stroke="rgb(0,255,0)"
+stroke-width="7"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_awa" d="M 0 512
+ C 62 534, 497 733, 556 706
+ C 615 679, 510 266, 530 269
+ C 550 272, 702 682, 732 729
+ C 762 776, 836 734, 803 693
+ C 770 652, 492 388, 435 364
+ C 378 340, 291 468, 292 481
+ C 293 494, 405 485, 441 477
+ C 477 469, 582 435, 618 405
+ C 654 375, 783 166, 768 211
+ C 753 256, 494 760, 479 807
+ C 464 854, 646 692, 629 638
+ C 612 584, 368 367, 323 321
+ C 278 275, 193 180, 227 227
+ C 261 274, 542 712, 631 745
+ C 720 778, 980 546, 1024 521
+">
+</path>
+</g>
+<filter id="lightUp"
+filterUnits="userSpaceOnUse"
+x="-100%" y="-100%" width="200%" height="200%"
+color-interpolation-filters="sRGB">
+
+<feGaussianBlur in="SourceGraphic"
+stdDeviation="3" 
+result="blur">
+</feGaussianBlur>
+
+<feMerge>
+<feMergeNode in="blur"/>
+<feMergeNode in="blur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter> 
+</defs>
+
+<rect width='1024' height='1024' fill='#000'/>
+
+  <g>
+    <use href="#thought-src" style="mix-blend-mode:lighten;"/>
+    <use href="#will-src" style="mix-blend-mode:lighten;"/>
+    <use href="#awa-src" style="mix-blend-mode:lighten;"/>
+  </g>
+
+
+</svg>

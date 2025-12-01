@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PATH Token Drafts</title>
+    <style>
+      :root {
+        --tile-size: 160px;
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #050505;
+        color: #ececec;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        padding: 18px 24px;
+        border-bottom: 1px solid #1b1b1b;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      main {
+        padding: 16px;
+        display: flex;
+        justify-content: center;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(var(--tile-size), var(--tile-size)));
+        gap: 12px;
+        margin: 0 auto;
+        justify-content: center;
+        width: fit-content;
+        max-width: 100%;
+        padding: 12px;
+      }
+      .tile {
+        position: relative;
+        background: #050505;
+        border: none;
+        border-radius: 0;
+        overflow: visible;
+        aspect-ratio: 1 / 1;
+        margin: 0;
+        transition: transform 0.2s ease;
+        transform-origin: center;
+      }
+      .thumb {
+        position: absolute;
+        inset: 0;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 8px;
+      }
+      .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        background: #000;
+        transition: transform 0.25s ease;
+      }
+      .tile:hover {
+        transform: scale(1.15);
+        z-index: 2;
+      }
+      .tile:hover .thumb img {
+        transform: scale(1.15);
+      }
+      figcaption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.8rem;
+        letter-spacing: 0.03em;
+        color: #f0f0f0;
+        padding: 6px 10px;
+        background: linear-gradient(
+          180deg,
+          rgba(5,5,5,0) 0%,
+          rgba(5,5,5,0.25) 30%,
+          rgba(5,5,5,0.85) 100%
+        );
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .tile:hover figcaption {
+        opacity: 1;
+      }
+      @media (max-width: 900px) {
+        :root { --tile-size: 140px; }
+      }
+      @media (max-width: 600px) {
+        :root { --tile-size: 120px; }
+      }
+      .empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        opacity: 0.75;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PATH Token Drafts</h1>
+    </header>
+    <main>
+      <div class="grid">
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_0.svg" loading="lazy" alt="path_0">
+        </div>
+        <figcaption>path_0</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_1.svg" loading="lazy" alt="path_1">
+        </div>
+        <figcaption>path_1</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_10.svg" loading="lazy" alt="path_10">
+        </div>
+        <figcaption>path_10</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_11.svg" loading="lazy" alt="path_11">
+        </div>
+        <figcaption>path_11</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_12.svg" loading="lazy" alt="path_12">
+        </div>
+        <figcaption>path_12</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_13.svg" loading="lazy" alt="path_13">
+        </div>
+        <figcaption>path_13</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_14.svg" loading="lazy" alt="path_14">
+        </div>
+        <figcaption>path_14</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_15.svg" loading="lazy" alt="path_15">
+        </div>
+        <figcaption>path_15</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_16.svg" loading="lazy" alt="path_16">
+        </div>
+        <figcaption>path_16</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_17.svg" loading="lazy" alt="path_17">
+        </div>
+        <figcaption>path_17</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_18.svg" loading="lazy" alt="path_18">
+        </div>
+        <figcaption>path_18</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_19.svg" loading="lazy" alt="path_19">
+        </div>
+        <figcaption>path_19</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_2.svg" loading="lazy" alt="path_2">
+        </div>
+        <figcaption>path_2</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_20.svg" loading="lazy" alt="path_20">
+        </div>
+        <figcaption>path_20</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_21.svg" loading="lazy" alt="path_21">
+        </div>
+        <figcaption>path_21</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_22.svg" loading="lazy" alt="path_22">
+        </div>
+        <figcaption>path_22</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_23.svg" loading="lazy" alt="path_23">
+        </div>
+        <figcaption>path_23</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_24.svg" loading="lazy" alt="path_24">
+        </div>
+        <figcaption>path_24</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_25.svg" loading="lazy" alt="path_25">
+        </div>
+        <figcaption>path_25</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_26.svg" loading="lazy" alt="path_26">
+        </div>
+        <figcaption>path_26</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_27.svg" loading="lazy" alt="path_27">
+        </div>
+        <figcaption>path_27</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_28.svg" loading="lazy" alt="path_28">
+        </div>
+        <figcaption>path_28</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_29.svg" loading="lazy" alt="path_29">
+        </div>
+        <figcaption>path_29</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_3.svg" loading="lazy" alt="path_3">
+        </div>
+        <figcaption>path_3</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_30.svg" loading="lazy" alt="path_30">
+        </div>
+        <figcaption>path_30</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_31.svg" loading="lazy" alt="path_31">
+        </div>
+        <figcaption>path_31</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_32.svg" loading="lazy" alt="path_32">
+        </div>
+        <figcaption>path_32</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_33.svg" loading="lazy" alt="path_33">
+        </div>
+        <figcaption>path_33</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_34.svg" loading="lazy" alt="path_34">
+        </div>
+        <figcaption>path_34</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_35.svg" loading="lazy" alt="path_35">
+        </div>
+        <figcaption>path_35</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_36.svg" loading="lazy" alt="path_36">
+        </div>
+        <figcaption>path_36</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_37.svg" loading="lazy" alt="path_37">
+        </div>
+        <figcaption>path_37</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_38.svg" loading="lazy" alt="path_38">
+        </div>
+        <figcaption>path_38</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_39.svg" loading="lazy" alt="path_39">
+        </div>
+        <figcaption>path_39</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_4.svg" loading="lazy" alt="path_4">
+        </div>
+        <figcaption>path_4</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_40.svg" loading="lazy" alt="path_40">
+        </div>
+        <figcaption>path_40</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_41.svg" loading="lazy" alt="path_41">
+        </div>
+        <figcaption>path_41</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_42.svg" loading="lazy" alt="path_42">
+        </div>
+        <figcaption>path_42</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_43.svg" loading="lazy" alt="path_43">
+        </div>
+        <figcaption>path_43</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_44.svg" loading="lazy" alt="path_44">
+        </div>
+        <figcaption>path_44</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_45.svg" loading="lazy" alt="path_45">
+        </div>
+        <figcaption>path_45</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_46.svg" loading="lazy" alt="path_46">
+        </div>
+        <figcaption>path_46</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_47.svg" loading="lazy" alt="path_47">
+        </div>
+        <figcaption>path_47</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_48.svg" loading="lazy" alt="path_48">
+        </div>
+        <figcaption>path_48</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_49.svg" loading="lazy" alt="path_49">
+        </div>
+        <figcaption>path_49</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_5.svg" loading="lazy" alt="path_5">
+        </div>
+        <figcaption>path_5</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_50.svg" loading="lazy" alt="path_50">
+        </div>
+        <figcaption>path_50</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_6.svg" loading="lazy" alt="path_6">
+        </div>
+        <figcaption>path_6</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_7.svg" loading="lazy" alt="path_7">
+        </div>
+        <figcaption>path_7</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_8.svg" loading="lazy" alt="path_8">
+        </div>
+        <figcaption>path_8</figcaption>
+      </figure>
+      <figure class="tile">
+        <div class="thumb">
+          <img src="path_9.svg" loading="lazy" alt="path_9">
+        </div>
+        <figcaption>path_9</figcaption>
+      </figure>
+      </div>
+    </main>
+  </body>
+</html>

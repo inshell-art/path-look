@@ -1,0 +1,87 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg"
+     style="background:#000; isolation:isolate">
+
+<defs>
+<g id="thought-src"
+stroke="rgb(0,0,255)"
+stroke-width="17"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_thought" d="M 0 513
+ C 332 482, 478 323, 663 452
+ C 848 581, 463 875, 369 770
+ C 275 665, 408 417, 475 242
+ C 542 67, 470 196, 503 421
+ C 536 646, 433 755, 540 692
+ C 647 629, 475 383, 717 296
+ C 959 209, 870 407, 1024 518
+">
+</path>
+</g>
+<g id="will-src"
+stroke="rgb(255,0,0)"
+stroke-width="17"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_will" d="M 0 522
+ C 333 486, 485 322, 666 451
+ C 847 580, 457 884, 362 780
+ C 267 676, 404 426, 476 243
+ C 548 60, 474 194, 505 414
+ C 536 634, 431 740, 537 682
+ C 643 624, 473 380, 717 299
+ C 961 218, 870 409, 1024 520
+">
+</path>
+</g>
+<g id="awa-src"
+stroke="rgb(0,255,0)"
+stroke-width="17"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_awa" d="M 0 514
+ C 331 479, 478 317, 661 445
+ C 844 573, 461 872, 365 770
+ C 269 668, 400 419, 469 242
+ C 538 65, 466 194, 503 417
+ C 540 640, 433 747, 542 687
+ C 651 627, 480 385, 721 298
+ C 962 211, 872 406, 1024 514
+">
+</path>
+</g>
+<filter id="lightUp"
+filterUnits="userSpaceOnUse"
+x="-100%" y="-100%" width="200%" height="200%"
+color-interpolation-filters="sRGB">
+
+<feGaussianBlur in="SourceGraphic"
+stdDeviation="3" 
+result="blur">
+</feGaussianBlur>
+
+<feMerge>
+<feMergeNode in="blur"/>
+<feMergeNode in="blur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter> 
+</defs>
+
+<rect width='1024' height='1024' fill='#000'/>
+
+  <g>
+    <use href="#thought-src" style="mix-blend-mode:lighten;"/>
+    <use href="#will-src" style="mix-blend-mode:lighten;"/>
+    <use href="#awa-src" style="mix-blend-mode:lighten;"/>
+  </g>
+
+
+</svg>

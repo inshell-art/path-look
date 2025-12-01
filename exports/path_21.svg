@@ -1,0 +1,129 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg"
+     style="background:#000; isolation:isolate">
+
+<defs>
+<g id="thought-src"
+stroke="rgb(0,0,255)"
+stroke-width="5"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_thought" d="M 0 515
+ C 170 632, 451 961, 510 866
+ C 569 771, 250 275, 177 230
+ C 104 185, 239 671, 290 731
+ C 341 791, 189 596, 329 410
+ C 469 224, 621 45, 711 174
+ C 801 303, 619 636, 599 796
+ C 579 956, 595 657, 652 653
+ C 709 649, 784 809, 771 783
+ C 758 757, 705 564, 612 574
+ C 519 584, 419 915, 491 812
+ C 563 709, 884 430, 829 264
+ C 774 98, 461 281, 326 313
+ C 191 345, 407 316, 423 359
+ C 439 402, 365 289, 373 443
+ C 381 597, 423 758, 447 822
+ C 471 886, 407 702, 446 635
+ C 485 568, 567 753, 563 622
+ C 559 491, 358 310, 433 241
+ C 508 172, 874 282, 788 414
+ C 702 546, 96 604, 175 638
+ C 254 672, 741 556, 1024 515
+">
+</path>
+</g>
+<g id="will-src"
+stroke="rgb(255,0,0)"
+stroke-width="5"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_will" d="M 0 522
+ C 170 635, 449 960, 510 862
+ C 571 764, 258 274, 184 227
+ C 110 180, 240 661, 287 722
+ C 334 783, 184 593, 326 411
+ C 468 229, 620 45, 712 175
+ C 804 305, 624 642, 603 800
+ C 582 958, 593 654, 649 650
+ C 705 646, 784 809, 772 787
+ C 760 765, 706 574, 613 583
+ C 520 592, 420 917, 492 813
+ C 564 709, 884 436, 830 270
+ C 776 104, 463 286, 331 314
+ C 199 342, 420 308, 433 353
+ C 446 398, 369 293, 371 450
+ C 373 607, 413 762, 439 824
+ C 465 886, 408 703, 449 636
+ C 490 569, 568 755, 563 624
+ C 558 493, 360 311, 433 242
+ C 506 173, 864 283, 781 417
+ C 698 551, 103 610, 184 644
+ C 265 678, 744 561, 1024 519
+">
+</path>
+</g>
+<g id="awa-src"
+stroke="rgb(0,255,0)"
+stroke-width="5"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_awa" d="M 0 513
+ C 171 632, 452 965, 512 870
+ C 572 775, 254 278, 179 229
+ C 104 180, 238 663, 287 724
+ C 336 785, 188 592, 327 411
+ C 466 230, 614 51, 705 181
+ C 796 311, 619 645, 600 802
+ C 581 959, 593 656, 648 651
+ C 703 646, 777 813, 766 788
+ C 755 763, 707 569, 614 577
+ C 521 585, 417 916, 487 813
+ C 557 710, 876 434, 823 268
+ C 770 102, 461 283, 329 314
+ C 197 345, 411 316, 426 360
+ C 441 404, 369 291, 375 445
+ C 381 599, 421 755, 445 821
+ C 469 887, 408 709, 446 643
+ C 484 577, 563 756, 558 622
+ C 553 488, 357 309, 432 242
+ C 507 175, 867 290, 784 422
+ C 701 554, 102 605, 182 638
+ C 262 671, 743 559, 1024 520
+">
+</path>
+</g>
+<filter id="lightUp"
+filterUnits="userSpaceOnUse"
+x="-100%" y="-100%" width="200%" height="200%"
+color-interpolation-filters="sRGB">
+
+<feGaussianBlur in="SourceGraphic"
+stdDeviation="3" 
+result="blur">
+</feGaussianBlur>
+
+<feMerge>
+<feMergeNode in="blur"/>
+<feMergeNode in="blur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter> 
+</defs>
+
+<rect width='1024' height='1024' fill='#000'/>
+
+  <g>
+    <use href="#thought-src" style="mix-blend-mode:lighten;"/>
+    <use href="#will-src" style="mix-blend-mode:lighten;"/>
+    <use href="#awa-src" style="mix-blend-mode:lighten;"/>
+  </g>
+
+
+</svg>

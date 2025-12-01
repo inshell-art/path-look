@@ -20,13 +20,11 @@ TOKEN_ID="$1"
 THOUGHT_FLAG="$2"
 WILL_FLAG="$3"
 AWA_FLAG="$4"
-OUTPUT_FILE="${5:-path_${TOKEN_ID}.svg}"
 
-OUTPUT_FILE=$(python3 - "${OUTPUT_FILE}" <<'PY'
-import pathlib, sys
-print(pathlib.Path(sys.argv[1]).expanduser().resolve())
-PY
-)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+DEFAULT_RELATIVE_OUTPUT="exports/path_${TOKEN_ID}.svg"
+RAW_OUTPUT="${5:-${DEFAULT_RELATIVE_OUTPUT}}"
 
 for flag in "$THOUGHT_FLAG" "$WILL_FLAG" "$AWA_FLAG"; do
   if [[ "$flag" != "0" && "$flag" != "1" ]]; then
@@ -35,8 +33,6 @@ for flag in "$THOUGHT_FLAG" "$WILL_FLAG" "$AWA_FLAG"; do
   fi
 done
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
 CONTRACT_HASHES_PATH="${PROJECT_ROOT}/contract_hashes.json"
 
 if [[ ! -f "${CONTRACT_HASHES_PATH}" ]]; then
@@ -57,6 +53,17 @@ if not address:
 print(address)
 PY
 )
+
+OUTPUT_FILE=$(python3 - "${PROJECT_ROOT}" "${RAW_OUTPUT}" <<'PY'
+import pathlib, sys
+root = pathlib.Path(sys.argv[1])
+raw = pathlib.Path(sys.argv[2]).expanduser()
+target = raw if raw.is_absolute() else (root / raw)
+print(target.resolve(strict=False))
+PY
+)
+
+mkdir -p "$(dirname "${OUTPUT_FILE}")"
 
 TMP_JSON=$(mktemp)
 trap 'rm -f "$TMP_JSON"' EXIT

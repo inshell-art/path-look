@@ -1,0 +1,102 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg"
+     style="background:#000; isolation:isolate">
+
+<defs>
+<g id="thought-src"
+stroke="rgb(0,0,255)"
+stroke-width="9"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_thought" d="M 0 515
+ C 69 571, 205 785, 346 793
+ C 487 801, 688 570, 704 553
+ C 720 536, 441 653, 425 709
+ C 409 765, 626 813, 625 831
+ C 624 849, 379 911, 420 800
+ C 461 689, 759 311, 830 277
+ C 901 243, 827 576, 777 631
+ C 727 686, 640 560, 582 550
+ C 524 540, 480 546, 489 581
+ C 498 616, 643 763, 627 723
+ C 611 683, 332 420, 411 379
+ C 490 338, 901 489, 1024 517
+">
+</path>
+</g>
+<g id="will-src"
+stroke="rgb(255,0,0)"
+stroke-width="9"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_will" d="M 0 518
+ C 68 573, 198 789, 340 795
+ C 482 801, 695 568, 712 550
+ C 729 532, 444 648, 426 704
+ C 408 760, 621 808, 621 828
+ C 621 848, 385 917, 427 806
+ C 469 695, 759 308, 829 273
+ C 899 238, 827 575, 777 632
+ C 727 689, 638 565, 580 557
+ C 522 549, 479 556, 489 590
+ C 499 624, 642 770, 628 728
+ C 614 686, 341 420, 420 379
+ C 499 338, 903 493, 1024 522
+">
+</path>
+</g>
+<g id="awa-src"
+stroke="rgb(0,255,0)"
+stroke-width="9"
+fill="none"
+stroke-linecap="round"
+stroke-linejoin="round"
+filter="url(#lightUp)">
+<path id="path_awa" d="M 0 517
+ C 68 574, 200 794, 341 800
+ C 482 806, 688 568, 705 549
+ C 722 530, 443 647, 427 704
+ C 411 761, 623 815, 623 834
+ C 623 853, 386 913, 426 801
+ C 466 689, 755 308, 825 274
+ C 895 240, 824 574, 776 630
+ C 728 686, 641 561, 584 553
+ C 527 545, 484 557, 492 591
+ C 500 625, 639 767, 624 724
+ C 609 681, 336 416, 416 376
+ C 496 336, 902 493, 1024 522
+">
+</path>
+</g>
+<filter id="lightUp"
+filterUnits="userSpaceOnUse"
+x="-100%" y="-100%" width="200%" height="200%"
+color-interpolation-filters="sRGB">
+
+<feGaussianBlur in="SourceGraphic"
+stdDeviation="3" 
+result="blur">
+</feGaussianBlur>
+
+<feMerge>
+<feMergeNode in="blur"/>
+<feMergeNode in="blur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter> 
+</defs>
+
+<rect width='1024' height='1024' fill='#000'/>
+
+  <g>
+    <use href="#thought-src" style="mix-blend-mode:lighten;"/>
+    <use href="#will-src" style="mix-blend-mode:lighten;"/>
+    <use href="#awa-src" style="mix-blend-mode:lighten;"/>
+  </g>
+
+
+</svg>
