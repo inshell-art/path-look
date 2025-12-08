@@ -3,7 +3,7 @@ use glyph_pprf::{IPprfDispatcher, IPprfDispatcherTrait};
 use starknet::ContractAddress;
 
 
-/// Scope identifier appended to every `PATH_SVG` PRF request.
+/// Scope identifier appended to every `PathLook` PRF request.
 const SCOPE_PATH: felt252 = 'PATH';
 /// PPRF outputs values in [0, 999_999]; used to normalize into ranges.
 const NORMALIZED_MAX: u256 = 1_000_000;

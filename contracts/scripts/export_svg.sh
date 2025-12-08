@@ -49,11 +49,11 @@ import json, sys, pathlib
 path = pathlib.Path(sys.argv[1])
 data = json.loads(path.read_text())
 try:
-    address = data["devnet"]["PATHSVG_contract_address"]
+    address = data["devnet"]["path_look_contract_address"]
 except KeyError as exc:
-    raise SystemExit(f"Missing devnet PATHSVG_contract_address in {path}") from exc
+    raise SystemExit(f"Missing devnet path_look_contract_address in {path}") from exc
 if not address:
-    raise SystemExit("PATHSVG_contract_address is empty; update contract_hashes.json")
+    raise SystemExit("path_look_contract_address is empty; update contract_hashes.json")
 print(address)
 PY
 )

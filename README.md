@@ -1,6 +1,6 @@
-# PATH SVG - On-Chain SVG Generator for Starknet
+# Path Look - On-Chain SVG Generator for Starknet
 
-An on-chain SVG generation contract built on Starknet using Cairo 2.
+Path Look is an on-chain SVG generation contract built on Starknet using Cairo 2. The Scarb package is `path_look` and the deployed contract name is `PathLook`.
 
 ## Quick Start
 
@@ -18,8 +18,8 @@ scarb build
 
 ### Contract Deployed on Devnet
 
-- **Contract Address:** `0x04add2e03e6c61bde38205a88f2f0bc5da68f46d8d5c101bd3629d6d9436684c`
-- **Class Hash:** `0x3946d0eddd52da33d6673b9279933fd04c8c9bcd66e2ac6caab658c688194ae`
+- **PathLook Contract Address:** `0x04add2e03e6c61bde38205a88f2f0bc5da68f46d8d5c101bd3629d6d9436684c`
+- **PathLook Class Hash:** `0x3946d0eddd52da33d6673b9279933fd04c8c9bcd66e2ac6caab658c688194ae`
 - **Network:** Local Devnet (`http://127.0.0.1:5050`)
 
 ### Call the Contract
@@ -56,9 +56,9 @@ sncast call \
 
 ## Project Structure
 
-- `contracts/src/PATH_SVG.cairo` - Main contract
-- `contracts/src/random_utils.cairo` - Poseidon PRF utilities
-- `contracts/src/lib.cairo` - Library utilities
+- `contracts/src/path_look.cairo` - Main contract
+- `contracts/src/rng.cairo` - Poseidon PRF utilities
+- `contracts/src/lib.cairo` - Module exports
 - `contract_hashes.json` - Deployed contract addresses and class hashes
 - `contracts/accounts.json` - Predeployed account credentials (for devnet)
 
