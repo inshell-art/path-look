@@ -1,7 +1,8 @@
 use core::array::{ArrayTrait, Span, SpanTrait};
 use path_look::PathLook::{IPathLookDispatcher, IPathLookDispatcherTrait};
-use snforge_std::{declare, deploy, ContractClass, ContractInstance};
+use snforge_std::{declare, deploy, ContractInstance};
 use starknet::ContractAddress;
+use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
 #[starknet::contract]
 mod MockPprf {
@@ -15,27 +16,27 @@ mod MockPprf {
         self.value.write(value);
     }
 
-    #[external]
+    #[external(v0)]
     fn pprf(self: @ContractState, _params: Span<felt252>) -> u32 {
         self.value.read()
     }
 }
 
 fn deploy_mock_pprf(value: u32) -> ContractInstance {
-    let mock_class = declare("MockPprf");
+    let mock_class = declare("MockPprf").unwrap();
     // constructor calldata: value
-    deploy(mock_class.class_hash, array![value.into()].span())
+    deploy(mock_class.class_hash, array![value.into()].span()).unwrap()
 }
 
 fn deploy_step_curve() -> ContractInstance {
-    let class = declare("StepCurve");
-    deploy(class.class_hash, array![].span())
+    let class = declare("StepCurve").unwrap();
+    deploy(class.class_hash, array![].span()).unwrap()
 }
 
 fn deploy_path_look(
     pprf_address: ContractAddress, step_curve_address: ContractAddress,
 ) -> ContractInstance {
-    let class = declare("PathLook");
+    let class = declare("PathLook").unwrap();
     // constructor calldata: pprf_address, step_curve_address
     deploy(
         class.class_hash, array![pprf_address.into(), step_curve_address.into()].span()
@@ -43,7 +44,9 @@ fn deploy_path_look(
 }
 
 fn byte_array_is_empty(bytes: core::byte_array::ByteArray) -> bool {
-    bytes.data.len() == 0_usize && bytes.pending_word_len == 0_u32
+    // Minimal check: convert to span and see if there's any byte.
+    let span = bytes.span();
+    span.len() == 0_usize
 }
 
 #[test]

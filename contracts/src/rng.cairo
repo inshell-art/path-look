@@ -1,5 +1,6 @@
-use core::array::Array;
-use glyph_pprf::{IPprfDispatcher, IPprfDispatcherTrait};
+use core::array::{Array, ArrayTrait};
+use core::traits::TryInto;
+use glyph_pprf::{IGlyphDispatcher, IGlyphDispatcherTrait};
 use starknet::ContractAddress;
 
 
@@ -11,9 +12,14 @@ const NORMALIZED_MAX: u256 = 1_000_000;
 fn call_pprf(
     pprf_address: ContractAddress, token_id: felt252, label: felt252, occurrence: u32,
 ) -> u32 {
-    let dispatcher = IPprfDispatcher { contract_address: pprf_address };
+    let dispatcher = IGlyphDispatcher { contract_address: pprf_address };
     let params: Array<felt252> = array![SCOPE_PATH, token_id, label, occurrence.into()];
-    dispatcher.pprf(params.span())
+    let response = dispatcher.render(params.span());
+    let response_snapshot = @response;
+    assert(response_snapshot.len() > 0_usize, 'pprf render returned empty');
+    let first: felt252 = *response_snapshot.at(0_usize);
+    let value: u32 = first.try_into().unwrap();
+    value
 }
 
 /// Generate pseudo-random `u32` in range [min, max] (inclusive) using the shared `pprf` contract.

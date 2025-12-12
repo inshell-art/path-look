@@ -1,3 +1,3 @@
-mod PathLook;
-mod step_curve;
+pub mod PathLook;
+pub mod step_curve;
 mod rng;

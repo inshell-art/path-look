@@ -1,6 +1,6 @@
 #[starknet::contract]
-mod StepCurve {
-    use core::array::{ArrayTrait, SpanTrait};
+pub mod StepCurve {
+    use core::array::{ArrayTrait, Span, SpanTrait};
     use core::byte_array::ByteArrayTrait;
 
     #[derive(Copy, Drop)]
@@ -13,7 +13,7 @@ mod StepCurve {
     struct Storage {}
 
     #[abi(embed_v0)]
-    impl StepCurveImpl of super::IStepCurve<ContractState> {
+    impl StepCurveImpl of IStepCurve<ContractState> {
         fn render_path(
             self: @ContractState,
             width: u32,
@@ -23,7 +23,7 @@ mod StepCurve {
             stroke_b: u32,
             stroke_width: u32,
             sharpness: u32,
-            nodes: Span<felt252>,
+            nodes: Span<i128>,
         ) -> ByteArray {
             let steps = self._decode_nodes(nodes, width, height);
             let d = self._to_cubic_bezier(@steps, sharpness);
@@ -48,7 +48,7 @@ mod StepCurve {
     }
 
     #[starknet::interface]
-    trait IStepCurve<TContractState> {
+    pub trait IStepCurve<TContractState> {
         fn render_path(
             self: @TContractState,
             width: u32,
@@ -58,14 +58,14 @@ mod StepCurve {
             stroke_b: u32,
             stroke_width: u32,
             sharpness: u32,
-            nodes: Span<felt252>,
+            nodes: Span<i128>,
         ) -> ByteArray;
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn _decode_nodes(
-            self: @ContractState, nodes: Span<felt252>, width: u32, height: u32,
+            self: @ContractState, nodes: Span<i128>, width: u32, height: u32,
         ) -> Array<Step> {
             let mut steps: Array<Step> = array![];
             let len = nodes.len();
@@ -74,8 +74,8 @@ mod StepCurve {
             let max_y: i128 = height.into();
 
             while i + 1_usize < len {
-                let x: i128 = (*nodes.at(i)).into();
-                let y: i128 = (*nodes.at(i + 1_usize)).into();
+                let x: i128 = *nodes.at(i);
+                let y: i128 = *nodes.at(i + 1_usize);
                 let clamped_x = self._clamp_i128(x, 0_i128, max_x);
                 let clamped_y = self._clamp_i128(y, 0_i128, max_y);
                 steps.append(Step { x: clamped_x, y: clamped_y });

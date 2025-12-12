@@ -1,9 +1,9 @@
 #[starknet::contract]
-mod PathLook {
+pub mod PathLook {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArrayTrait;
     use path_look::rng;
-    use path_look::step_curve::StepCurve::IStepCurveDispatcher;
+    use path_look::step_curve::StepCurve::{IStepCurveDispatcher, IStepCurveDispatcherTrait};
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
@@ -354,12 +354,12 @@ mod PathLook {
             sharpness: u32,
         ) -> ByteArray {
             let addr = self.step_curve_address.read();
-            let mut nodes: Array<felt252> = array![];
+            let mut nodes: Array<i128> = array![];
             let mut i: usize = 0_usize;
             while i < steps.len() {
                 let s = *steps.at(i);
-                nodes.append(s.x.into());
-                nodes.append(s.y.into());
+                nodes.append(s.x);
+                nodes.append(s.y);
                 i = i + 1_usize;
             }
             let dispatcher = IStepCurveDispatcher { contract_address: addr };

@@ -11,9 +11,9 @@ glyph_pprf = { git = "https://github.com/inshell-art/pprf.git" }
 sierra = true
 casm = true
 
-[patch.'https://github.com/inshell-art/pprf.git']
-glyph_pprf = { path = "../../../Glyph/pprf" }
-
 [scripts]
 build = "scarb build"
 check = "scarb check"
+
+[dev-dependencies]
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.52.0" }

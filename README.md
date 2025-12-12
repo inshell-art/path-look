@@ -61,7 +61,7 @@ sncast call \
 
 ## Project Structure
 
-- `contracts/src/path_look.cairo` - Main contract (uses `StepCurve` for path rendering)
+- `contracts/src/PathLook.cairo` - Main contract (uses `StepCurve` for path rendering)
 - `contracts/src/step_curve.cairo` - Standalone path-rendering contract
 - `contracts/src/rng.cairo` - Poseidon PRF utilities
 - `contracts/src/lib.cairo` - Module exports
