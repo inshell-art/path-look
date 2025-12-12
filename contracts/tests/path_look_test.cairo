@@ -27,10 +27,19 @@ fn deploy_mock_pprf(value: u32) -> ContractInstance {
     deploy(mock_class.class_hash, array![value.into()].span())
 }
 
-fn deploy_path_look(pprf_address: ContractAddress) -> ContractInstance {
+fn deploy_step_curve() -> ContractInstance {
+    let class = declare("StepCurve");
+    deploy(class.class_hash, array![].span())
+}
+
+fn deploy_path_look(
+    pprf_address: ContractAddress, step_curve_address: ContractAddress,
+) -> ContractInstance {
     let class = declare("PathLook");
-    // constructor calldata: pprf_address
-    deploy(class.class_hash, array![pprf_address.into()].span())
+    // constructor calldata: pprf_address, step_curve_address
+    deploy(
+        class.class_hash, array![pprf_address.into(), step_curve_address.into()].span()
+    )
 }
 
 fn byte_array_is_empty(bytes: core::byte_array::ByteArray) -> bool {
@@ -40,7 +49,8 @@ fn byte_array_is_empty(bytes: core::byte_array::ByteArray) -> bool {
 #[test]
 fn generate_svg_returns_payload() {
     let mock = deploy_mock_pprf(111_111_u32);
-    let contract = deploy_path_look(mock.contract_address);
+    let step_curve = deploy_step_curve();
+    let contract = deploy_path_look(mock.contract_address, step_curve.contract_address);
     let dispatcher = IPathLookDispatcher { contract_address: contract.contract_address };
 
     let svg = dispatcher.generate_svg(1, false, false, false);
@@ -50,7 +60,8 @@ fn generate_svg_returns_payload() {
 #[test]
 fn metadata_returns_payload() {
     let mock = deploy_mock_pprf(222_222_u32);
-    let contract = deploy_path_look(mock.contract_address);
+    let step_curve = deploy_step_curve();
+    let contract = deploy_path_look(mock.contract_address, step_curve.contract_address);
     let dispatcher = IPathLookDispatcher { contract_address: contract.contract_address };
 
     let metadata = dispatcher.get_token_metadata(5, false, true, false);

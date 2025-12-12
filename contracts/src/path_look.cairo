@@ -3,6 +3,7 @@ mod PathLook {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArrayTrait;
     use path_look::rng;
+    use path_look::step_curve::StepCurve::IStepCurveDispatcher;
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
@@ -21,11 +22,15 @@ mod PathLook {
     #[storage]
     struct Storage {
         pprf_address: ContractAddress,
+        step_curve_address: ContractAddress,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, pprf_address: ContractAddress) {
+    fn constructor(
+        ref self: ContractState, pprf_address: ContractAddress, step_curve_address: ContractAddress,
+    ) {
         self.pprf_address.write(pprf_address);
+        self.step_curve_address.write(step_curve_address);
     }
 
     #[derive(Copy, Drop)]
@@ -56,15 +61,21 @@ mod PathLook {
 
             let thought_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_THOUGHT_DX, LABEL_THOUGHT_DY);
-            let thought_path = self._to_cubic_bezier(@thought_steps, sharpness);
+            let thought_path = self._render_step_curve(
+                @thought_steps, WIDTH, HEIGHT, 0_u32, 0_u32, 255_u32, stroke_w, sharpness,
+            );
 
             let will_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_WILL_DX, LABEL_WILL_DY);
-            let will_path = self._to_cubic_bezier(@will_steps, sharpness);
+            let will_path = self._render_step_curve(
+                @will_steps, WIDTH, HEIGHT, 255_u32, 0_u32, 0_u32, stroke_w, sharpness,
+            );
 
             let awa_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_AWA_DX, LABEL_AWA_DY);
-            let awa_path = self._to_cubic_bezier(@awa_steps, sharpness);
+            let awa_path = self._render_step_curve(
+                @awa_steps, WIDTH, HEIGHT, 0_u32, 255_u32, 0_u32, stroke_w, sharpness,
+            );
 
             let all_not_minted = (!if_thought_minted) && (!if_will_minted) && (!if_awa_minted);
             let sigma = if all_not_minted {
@@ -77,46 +88,25 @@ mod PathLook {
             if if_thought_minted { // Minted token hides this strand.
             } else {
                 defs.append(@"<g id=\"thought-src\"\n");
-                defs.append(@"stroke=\"rgb(0,0,255)\"\n");
-                defs.append(@"stroke-width=\"");
-                defs.append(@self._u32_to_string(stroke_w));
-                defs
-                    .append(
-                        @"\"\nfill=\"none\"\nstroke-linecap=\"round\"\nstroke-linejoin=\"round\"\nfilter=\"url(#lightUp)\">\n",
-                    );
-                defs.append(@"<path id=\"path_thought\" d=\"");
+                defs.append(@"filter=\"url(#lightUp)\">\n");
                 defs.append(@thought_path);
-                defs.append(@"\">\n</path>\n</g>\n");
+                defs.append(@"\n</g>\n");
             }
 
             if if_will_minted { // Minted token hides this strand.
             } else {
                 defs.append(@"<g id=\"will-src\"\n");
-                defs.append(@"stroke=\"rgb(255,0,0)\"\n");
-                defs.append(@"stroke-width=\"");
-                defs.append(@self._u32_to_string(stroke_w));
-                defs
-                    .append(
-                        @"\"\nfill=\"none\"\nstroke-linecap=\"round\"\nstroke-linejoin=\"round\"\nfilter=\"url(#lightUp)\">\n",
-                    );
-                defs.append(@"<path id=\"path_will\" d=\"");
+                defs.append(@"filter=\"url(#lightUp)\">\n");
                 defs.append(@will_path);
-                defs.append(@"\">\n</path>\n</g>\n");
+                defs.append(@"\n</g>\n");
             }
 
             if if_awa_minted { // Minted token hides this strand.
             } else {
                 defs.append(@"<g id=\"awa-src\"\n");
-                defs.append(@"stroke=\"rgb(0,255,0)\"\n");
-                defs.append(@"stroke-width=\"");
-                defs.append(@self._u32_to_string(stroke_w));
-                defs
-                    .append(
-                        @"\"\nfill=\"none\"\nstroke-linecap=\"round\"\nstroke-linejoin=\"round\"\nfilter=\"url(#lightUp)\">\n",
-                    );
-                defs.append(@"<path id=\"path_awa\" d=\"");
+                defs.append(@"filter=\"url(#lightUp)\">\n");
                 defs.append(@awa_path);
-                defs.append(@"\">\n</path>\n</g>\n");
+                defs.append(@"\n</g>\n");
             }
 
             defs
@@ -246,16 +236,6 @@ mod PathLook {
             rng::pseudo_random_range(address, token_id, label, occurrence, min, max)
         }
 
-        fn _pow2(self: @ContractState, exponent: u32) -> u32 {
-            let mut result = 1_u32;
-            let mut i = 0_u32;
-            while i < exponent {
-                result = result * 2_u32;
-                i = i + 1_u32;
-            }
-            result
-        }
-
         fn _max_u32(self: @ContractState, a: u32, b: u32) -> u32 {
             if a >= b {
                 a
@@ -349,81 +329,6 @@ mod PathLook {
             steps
         }
 
-        fn _to_cubic_bezier(
-            self: @ContractState, steps: @Array<Step>, sharpness: u32,
-        ) -> ByteArray {
-            let len = steps.len();
-            if len < 2_usize {
-                return Default::default();
-            }
-
-            let mut d: ByteArray = Default::default();
-            let first = *steps.at(0_usize);
-            d.append(@"M ");
-            d.append(@self._i128_to_string(first.x));
-            d.append(@" ");
-            d.append(@self._i128_to_string(first.y));
-            d.append(@"\n");
-
-            let mut i: usize = 0_usize;
-            let last_index = len - 1_usize;
-            while i < last_index {
-                let p0 = if i == 0_usize {
-                    *steps.at(0_usize)
-                } else {
-                    *steps.at(i - 1_usize)
-                };
-                let p1 = *steps.at(i);
-                let p2 = *steps.at(i + 1_usize);
-                let p3 = if i + 2_usize < len {
-                    *steps.at(i + 2_usize)
-                } else {
-                    *steps.at(last_index)
-                };
-
-                let delta_x1 = p2.x - p0.x;
-                let delta_y1 = p2.y - p0.y;
-                let delta_x2 = p3.x - p1.x;
-                let delta_y2 = p3.y - p1.y;
-
-                let cp1x = p1.x + self._div_round(delta_x1, sharpness);
-                let cp1y = p1.y + self._div_round(delta_y1, sharpness);
-                let cp2x = p2.x - self._div_round(delta_x2, sharpness);
-                let cp2y = p2.y - self._div_round(delta_y2, sharpness);
-
-                d.append(@" C ");
-                d.append(@self._i128_to_string(cp1x));
-                d.append(@" ");
-                d.append(@self._i128_to_string(cp1y));
-                d.append(@", ");
-                d.append(@self._i128_to_string(cp2x));
-                d.append(@" ");
-                d.append(@self._i128_to_string(cp2y));
-                d.append(@", ");
-                d.append(@self._i128_to_string(p2.x));
-                d.append(@" ");
-                d.append(@self._i128_to_string(p2.y));
-                d.append(@"\n");
-
-                i = i + 1_usize;
-            }
-
-            d
-        }
-
-        fn _div_round(self: @ContractState, value: i128, denominator: u32) -> i128 {
-            let denom: i128 = denominator.into();
-            if denom == 0_i128 {
-                return 0_i128;
-            }
-
-            if value >= 0_i128 {
-                (value + denom / 2_i128) / denom
-            } else {
-                (value - denom / 2_i128) / denom
-            }
-        }
-
         fn _clamp_i128(
             self: @ContractState, value: i128, min_value: i128, max_value: i128,
         ) -> i128 {
@@ -435,6 +340,32 @@ mod PathLook {
                 result = max_value;
             }
             result
+        }
+
+        fn _render_step_curve(
+            self: @ContractState,
+            steps: @Array<Step>,
+            width: u32,
+            height: u32,
+            stroke_r: u32,
+            stroke_g: u32,
+            stroke_b: u32,
+            stroke_width: u32,
+            sharpness: u32,
+        ) -> ByteArray {
+            let addr = self.step_curve_address.read();
+            let mut nodes: Array<felt252> = array![];
+            let mut i: usize = 0_usize;
+            while i < steps.len() {
+                let s = *steps.at(i);
+                nodes.append(s.x.into());
+                nodes.append(s.y.into());
+                i = i + 1_usize;
+            }
+            let dispatcher = IStepCurveDispatcher { contract_address: addr };
+            dispatcher.render_path(
+                width, height, stroke_r, stroke_g, stroke_b, stroke_width, sharpness, nodes.span()
+            )
         }
 
         fn _u128_to_string(self: @ContractState, value: u128) -> ByteArray {

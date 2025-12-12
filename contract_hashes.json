@@ -2,11 +2,15 @@
     "devnet": {
         "path_look_class_hash": "0x77f8a73a48bc2a6522f152e8a03a604dd2909f9297aa21437134065d6d93571",
         "path_look_contract_address": "0x0386802691457625dd7246b599464b142fae8e06eb7450c16059e80da86e0fbf",
+        "step_curve_class_hash": "",
+        "step_curve_contract_address": "",
         "pprf_contract_address": "0x04c4f9d6137329fadb1f152903524567482fd2a88553fea7b17a84423a4b8446",
         "other_contract": ""
     },
     "testnet": {
         "path_look_class_hash": "",
+        "step_curve_class_hash": "",
+        "step_curve_contract_address": "",
         "other_contract": ""
     }
 }
