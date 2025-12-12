@@ -66,8 +66,8 @@ mod PathLook {
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_AWA_DX, LABEL_AWA_DY);
             let awa_path = self._to_cubic_bezier(@awa_steps, sharpness);
 
-            let all_minted = if_thought_minted && if_will_minted && if_awa_minted;
-            let sigma = if all_minted {
+            let all_not_minted = (!if_thought_minted) && (!if_will_minted) && (!if_awa_minted);
+            let sigma = if all_not_minted {
                 30_u32
             } else {
                 3_u32
