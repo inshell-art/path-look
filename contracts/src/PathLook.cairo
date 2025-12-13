@@ -3,7 +3,7 @@ pub mod PathLook {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArrayTrait;
     use path_look::rng;
-    use path_look::step_curve::StepCurve::{IStepCurveDispatcher, IStepCurveDispatcherTrait, Point};
+    use step_curve::StepCurve::StepCurve::{IStepCurveDispatcher, IStepCurveDispatcherTrait, Point};
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 

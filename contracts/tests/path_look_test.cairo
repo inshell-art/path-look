@@ -1,8 +1,40 @@
-use core::array::ArrayTrait;
+use core::array::{ArrayTrait, Span};
 use core::result::ResultTrait;
 use path_look::PathLook::{IPathLookDispatcher, IPathLookDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, DeclareResultTrait};
 use starknet::ContractAddress;
+use step_curve::StepCurve::StepCurve;
+
+#[starknet::contract]
+mod StepCurveMock {
+    use super::StepCurve::IStepCurve;
+
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl MockImpl of IStepCurve<ContractState> {
+        fn d_from_nodes(
+            self: @ContractState, nodes: Span<super::StepCurve::Point>, tension: u32,
+        ) -> ByteArray {
+            let _ = nodes;
+            let _ = tension;
+            let mut path: ByteArray = Default::default();
+            path.append(@"M 0 0");
+            path
+        }
+
+        fn d_from_flattened_xy(
+            self: @ContractState, nodes_xy: Span<felt252>, tension: u32,
+        ) -> ByteArray {
+            let _ = nodes_xy;
+            let _ = tension;
+            let mut path: ByteArray = Default::default();
+            path.append(@"M 0 0");
+            path
+        }
+    }
+}
 
 #[starknet::contract]
 mod MockPprf {
@@ -45,7 +77,7 @@ fn deploy_mock_pprf(value: u32) -> ContractAddress {
 }
 
 fn deploy_step_curve() -> ContractAddress {
-    let class = declare("StepCurve").unwrap().contract_class();
+    let class = declare("StepCurveMock").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![];
     let result = class.deploy(@calldata).unwrap();
     let (address, _) = result;

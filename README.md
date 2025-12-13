@@ -1,6 +1,6 @@
 # Path Look - On-Chain SVG Generator for Starknet
 
-Path Look is an on-chain SVG generation contract built on Starknet using Cairo 2. The Scarb package is `path_look` and the deployed contract name is `PathLook`. The repository also contains the `StepCurve` contract that renders cubic Bézier SVG paths used by Path Look.
+Path Look is an on-chain SVG generation contract built on Starknet using Cairo 2. The Scarb package is `path_look` and the deployed contract name is `PathLook`. Path rendering is delegated to the external [`step-curve`](https://github.com/inshell-art/step-curve) contract.
 
 ## Quick Start
 
@@ -61,8 +61,7 @@ sncast call \
 
 ## Project Structure
 
-- `contracts/src/PathLook.cairo` - Main contract (uses `StepCurve` for path rendering)
-- `contracts/src/step_curve.cairo` - Standalone path-rendering contract
+- `contracts/src/PathLook.cairo` - Main contract (uses the external `step-curve` contract for path rendering)
 - `contracts/src/rng.cairo` - Poseidon PRF utilities
 - `contracts/src/lib.cairo` - Module exports
 - `contract_hashes.json` - Deployed contract addresses and class hashes

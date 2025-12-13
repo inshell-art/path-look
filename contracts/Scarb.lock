@@ -12,6 +12,7 @@ version = "0.1.0"
 dependencies = [
  "glyph_pprf",
  "snforge_std",
+ "step_curve",
 ]
 
 [[package]]
@@ -26,3 +27,7 @@ source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.52.0#ae2
 dependencies = [
  "snforge_scarb_plugin",
 ]
+
+[[package]]
+name = "step_curve"
+version = "0.1.0"
