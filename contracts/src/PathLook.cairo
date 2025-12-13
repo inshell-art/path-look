@@ -3,7 +3,7 @@ pub mod PathLook {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArrayTrait;
     use path_look::rng;
-    use path_look::step_curve::StepCurve::{IStepCurveDispatcher, IStepCurveDispatcherTrait};
+    use path_look::step_curve::StepCurve::{IStepCurveDispatcher, IStepCurveDispatcherTrait, Point};
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
@@ -61,21 +61,15 @@ pub mod PathLook {
 
             let thought_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_THOUGHT_DX, LABEL_THOUGHT_DY);
-            let thought_path = self._render_step_curve(
-                @thought_steps, WIDTH, HEIGHT, 0_u32, 0_u32, 255_u32, stroke_w, sharpness,
-            );
+            let thought_path = self._curve_d(@thought_steps, sharpness);
 
             let will_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_WILL_DX, LABEL_WILL_DY);
-            let will_path = self._render_step_curve(
-                @will_steps, WIDTH, HEIGHT, 255_u32, 0_u32, 0_u32, stroke_w, sharpness,
-            );
+            let will_path = self._curve_d(@will_steps, sharpness);
 
             let awa_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_AWA_DX, LABEL_AWA_DY);
-            let awa_path = self._render_step_curve(
-                @awa_steps, WIDTH, HEIGHT, 0_u32, 255_u32, 0_u32, stroke_w, sharpness,
-            );
+            let awa_path = self._curve_d(@awa_steps, sharpness);
 
             let all_not_minted = (!if_thought_minted) && (!if_will_minted) && (!if_awa_minted);
             let sigma = if all_not_minted {
@@ -89,7 +83,14 @@ pub mod PathLook {
             } else {
                 defs.append(@"<g id=\"thought-src\"\n");
                 defs.append(@"filter=\"url(#lightUp)\">\n");
+                defs.append(@"<path id=\"path_thought\" d=\"");
                 defs.append(@thought_path);
+                defs.append(@"\" stroke=\"rgb(0,0,255)\" stroke-width=\"");
+                defs.append(@self._u32_to_string(stroke_w));
+                defs
+                    .append(
+                        @"\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />",
+                    );
                 defs.append(@"\n</g>\n");
             }
 
@@ -97,7 +98,14 @@ pub mod PathLook {
             } else {
                 defs.append(@"<g id=\"will-src\"\n");
                 defs.append(@"filter=\"url(#lightUp)\">\n");
+                defs.append(@"<path id=\"path_will\" d=\"");
                 defs.append(@will_path);
+                defs.append(@"\" stroke=\"rgb(255,0,0)\" stroke-width=\"");
+                defs.append(@self._u32_to_string(stroke_w));
+                defs
+                    .append(
+                        @"\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />",
+                    );
                 defs.append(@"\n</g>\n");
             }
 
@@ -105,7 +113,14 @@ pub mod PathLook {
             } else {
                 defs.append(@"<g id=\"awa-src\"\n");
                 defs.append(@"filter=\"url(#lightUp)\">\n");
+                defs.append(@"<path id=\"path_awa\" d=\"");
                 defs.append(@awa_path);
+                defs.append(@"\" stroke=\"rgb(0,255,0)\" stroke-width=\"");
+                defs.append(@self._u32_to_string(stroke_w));
+                defs
+                    .append(
+                        @"\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />",
+                    );
                 defs.append(@"\n</g>\n");
             }
 
@@ -342,30 +357,17 @@ pub mod PathLook {
             result
         }
 
-        fn _render_step_curve(
-            self: @ContractState,
-            steps: @Array<Step>,
-            width: u32,
-            height: u32,
-            stroke_r: u32,
-            stroke_g: u32,
-            stroke_b: u32,
-            stroke_width: u32,
-            sharpness: u32,
-        ) -> ByteArray {
+        fn _curve_d(self: @ContractState, steps: @Array<Step>, sharpness: u32) -> ByteArray {
             let addr = self.step_curve_address.read();
-            let mut nodes: Array<i128> = array![];
+            let mut nodes: Array<Point> = array![];
             let mut i: usize = 0_usize;
             while i < steps.len() {
                 let s = *steps.at(i);
-                nodes.append(s.x);
-                nodes.append(s.y);
+                nodes.append(Point { x: s.x, y: s.y });
                 i = i + 1_usize;
             }
             let dispatcher = IStepCurveDispatcher { contract_address: addr };
-            dispatcher.render_path(
-                width, height, stroke_r, stroke_g, stroke_b, stroke_width, sharpness, nodes.span()
-            )
+            dispatcher.d_from_nodes(nodes.span(), sharpness)
         }
 
         fn _u128_to_string(self: @ContractState, value: u128) -> ByteArray {
@@ -477,7 +479,7 @@ pub mod PathLook {
 }
 
 #[starknet::interface]
-trait IPathLook<TContractState> {
+pub trait IPathLook<TContractState> {
     /// Generate raw SVG code for a given token_id and minting status
     fn generate_svg(
         self: @TContractState,
