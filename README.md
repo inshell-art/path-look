@@ -8,6 +8,7 @@ Path Look is an on-chain SVG generation contract built on Starknet using Cairo 2
 - Rust (for Scarb build)
 - sncast (Starknet Foundry CLI)
 - Local Starknet Devnet (running on `http://127.0.0.1:5050`)
+- Python 3 (for the helper scripts)
 
 ### Build
 
@@ -18,14 +19,19 @@ scarb build
 
 ### Deploy (devnet)
 
-1. Deploy `StepCurve` and record its address.
-2. Deploy `PathLook` with constructor calldata `[pprf_address, step_curve_address]`.
+Use the helper scripts from the repo root:
 
-### Contract Deployed on Devnet
+```bash
+./contracts/scripts/devnet_deploy.sh      # declare + deploy pprf, step-curve, path-look
+./contracts/scripts/devnet_smoke.sh       # call PathLook + StepCurve once deployed
+```
 
-- **PathLook Contract Address:** `0x04add2e03e6c61bde38205a88f2f0bc5da68f46d8d5c101bd3629d6d9436684c`
-- **PathLook Class Hash:** `0x3946d0eddd52da33d6673b9279933fd04c8c9bcd66e2ac6caab658c688194ae`
-- **Network:** Local Devnet (`http://127.0.0.1:5050`)
+Addresses and class hashes are written to `devnet-deploy.json`.
+
+Manual steps (if you prefer):
+1. Deploy `Pprf`.
+2. Deploy `StepCurve`.
+3. Deploy `PathLook` with constructor calldata `[pprf_address, step_curve_address]`.
 
 ### Call the Contract
 
@@ -65,7 +71,7 @@ sncast call \
 - `contracts/src/rng.cairo` - Poseidon PRF utilities
 - `contracts/src/lib.cairo` - Module exports
 - `contract_hashes.json` - Deployed contract addresses and class hashes
-- `contracts/accounts.json` - Predeployed account credentials (for devnet)
+- `accounts.devnet.json` - Predeployed account credentials (for devnet)
 
 ## Development
 

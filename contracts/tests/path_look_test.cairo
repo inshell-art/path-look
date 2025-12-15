@@ -15,20 +15,20 @@ mod StepCurveMock {
     #[abi(embed_v0)]
     impl MockImpl of IStepCurve<ContractState> {
         fn d_from_nodes(
-            self: @ContractState, nodes: Span<super::StepCurve::Point>, tension: u32,
+            self: @ContractState, nodes: Span<super::StepCurve::Point>, handle_scale: u32,
         ) -> ByteArray {
             let _ = nodes;
-            let _ = tension;
+            let _ = handle_scale;
             let mut path: ByteArray = Default::default();
             path.append(@"M 0 0");
             path
         }
 
         fn d_from_flattened_xy(
-            self: @ContractState, nodes_xy: Span<felt252>, tension: u32,
+            self: @ContractState, nodes_xy: Span<felt252>, handle_scale: u32,
         ) -> ByteArray {
             let _ = nodes_xy;
-            let _ = tension;
+            let _ = handle_scale;
             let mut path: ByteArray = Default::default();
             path.append(@"M 0 0");
             path
