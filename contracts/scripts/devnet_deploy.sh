@@ -8,10 +8,14 @@ CONTRACTS_DIR="$REPO_ROOT/contracts"
 SUMMARY_FILE="${SUMMARY_FILE:-$REPO_ROOT/devnet-deploy.json}"
 
 RPC_URL="${RPC_URL:-http://127.0.0.1:5050}"
+CAST_PROFILE="${CAST_PROFILE:-}"
 ACCOUNT_NAME="${ACCOUNT_NAME:-predeployed}"
-ACCOUNTS_FILE="${ACCOUNTS_FILE:-$REPO_ROOT/accounts.devnet.json}"
+ACCOUNTS_FILE="${ACCOUNTS_FILE:-$HOME/.starknet_accounts/starknet_open_zeppelin_accounts.json}"
 
-CAST_FLAGS=(--url "$RPC_URL" --account "$ACCOUNT_NAME" --accounts-file "$ACCOUNTS_FILE" --wait --json)
+GLOBAL_FLAGS=(--account "$ACCOUNT_NAME" --accounts-file "$ACCOUNTS_FILE" --wait --json)
+if [[ -n "$CAST_PROFILE" ]]; then
+  GLOBAL_FLAGS=(--profile "$CAST_PROFILE" "${GLOBAL_FLAGS[@]}")
+fi
 
 extract_json_field() {
   local key="$1"
@@ -68,43 +72,43 @@ log_summary() {
 EOF
 }
 
-echo "Using sncast with url=$RPC_URL, account=$ACCOUNT_NAME, accounts=$ACCOUNTS_FILE"
+echo "Using sncast with url=$RPC_URL (profile $CAST_PROFILE, account $ACCOUNT_NAME)"
 echo "Building dependencies..."
 (cd "$REPO_ROOT/../pprf" && scarb build)
 (cd "$REPO_ROOT/../step-curve" && scarb build)
 (cd "$CONTRACTS_DIR" && scarb build)
 
 echo "Declaring Pprf..."
-PPRF_DECLARE=$(cd "$REPO_ROOT/../pprf" && sncast "${CAST_FLAGS[@]}" declare --contract-name Pprf --package glyph_pprf)
+PPRF_DECLARE=$(cd "$REPO_ROOT/../pprf" && sncast "${GLOBAL_FLAGS[@]}" declare --contract-name Pprf --package glyph_pprf --url "$RPC_URL")
 PPRF_CLASS_HASH=$(extract_json_field "class_hash" <<<"$PPRF_DECLARE")
 [[ -n "$PPRF_CLASS_HASH" ]] || { echo "Failed to parse Pprf class hash"; exit 1; }
 
 echo "Deploying Pprf..."
-PPRF_DEPLOY=$(sncast "${CAST_FLAGS[@]}" deploy --class-hash "$PPRF_CLASS_HASH")
+PPRF_DEPLOY=$(sncast "${GLOBAL_FLAGS[@]}" deploy --class-hash "$PPRF_CLASS_HASH" --url "$RPC_URL")
 PPRF_ADDRESS=$(extract_json_field "contract_address" <<<"$PPRF_DEPLOY")
 [[ -n "$PPRF_ADDRESS" ]] || { echo "Failed to parse Pprf contract address"; exit 1; }
 
 echo "Declaring StepCurve..."
-STEP_CURVE_DECLARE=$(cd "$REPO_ROOT/../step-curve" && sncast "${CAST_FLAGS[@]}" declare --contract-name StepCurve --package step_curve)
+STEP_CURVE_DECLARE=$(cd "$REPO_ROOT/../step-curve" && sncast "${GLOBAL_FLAGS[@]}" declare --contract-name StepCurve --package step_curve --url "$RPC_URL")
 STEP_CURVE_CLASS_HASH=$(extract_json_field "class_hash" <<<"$STEP_CURVE_DECLARE")
 [[ -n "$STEP_CURVE_CLASS_HASH" ]] || { echo "Failed to parse StepCurve class hash"; exit 1; }
 
 echo "Deploying StepCurve..."
-STEP_CURVE_DEPLOY=$(sncast "${CAST_FLAGS[@]}" deploy --class-hash "$STEP_CURVE_CLASS_HASH")
+STEP_CURVE_DEPLOY=$(sncast "${GLOBAL_FLAGS[@]}" deploy --class-hash "$STEP_CURVE_CLASS_HASH" --url "$RPC_URL")
 STEP_CURVE_ADDRESS=$(extract_json_field "contract_address" <<<"$STEP_CURVE_DEPLOY")
 [[ -n "$STEP_CURVE_ADDRESS" ]] || { echo "Failed to parse StepCurve contract address"; exit 1; }
 
 echo "Declaring PathLook..."
-PATH_LOOK_DECLARE=$(cd "$CONTRACTS_DIR" && sncast "${CAST_FLAGS[@]}" declare --contract-name PathLook --package path_look)
+PATH_LOOK_DECLARE=$(cd "$CONTRACTS_DIR" && sncast "${GLOBAL_FLAGS[@]}" declare --contract-name PathLook --package path_look --url "$RPC_URL")
 PATH_LOOK_CLASS_HASH=$(extract_json_field "class_hash" <<<"$PATH_LOOK_DECLARE")
 [[ -n "$PATH_LOOK_CLASS_HASH" ]] || { echo "Failed to parse PathLook class hash"; exit 1; }
 
 echo "Deploying PathLook..."
 PATH_LOOK_DEPLOY=$(
-  sncast "${CAST_FLAGS[@]}" \
-    deploy \
+  sncast "${GLOBAL_FLAGS[@]}" deploy \
     --class-hash "$PATH_LOOK_CLASS_HASH" \
-    --constructor-calldata "$PPRF_ADDRESS" "$STEP_CURVE_ADDRESS"
+    --constructor-calldata "$PPRF_ADDRESS" "$STEP_CURVE_ADDRESS" \
+    --url "$RPC_URL"
 )
 PATH_LOOK_ADDRESS=$(extract_json_field "contract_address" <<<"$PATH_LOOK_DEPLOY")
 [[ -n "$PATH_LOOK_ADDRESS" ]] || { echo "Failed to parse PathLook contract address"; exit 1; }

@@ -8,10 +8,15 @@ DEPLOY_FILE="${DEPLOY_FILE:-$REPO_ROOT/devnet-deploy.json}"
 TOKEN_ID="${TOKEN_ID:-1}"
 
 RPC_URL="${RPC_URL:-http://127.0.0.1:5050}"
+CAST_PROFILE="${CAST_PROFILE:-}"
 ACCOUNT_NAME="${ACCOUNT_NAME:-predeployed}"
-ACCOUNTS_FILE="${ACCOUNTS_FILE:-$REPO_ROOT/accounts.devnet.json}"
+ACCOUNTS_FILE="${ACCOUNTS_FILE:-$HOME/.starknet_accounts/starknet_open_zeppelin_accounts.json}"
 
-CAST_FLAGS=(--url "$RPC_URL" --account "$ACCOUNT_NAME" --accounts-file "$ACCOUNTS_FILE" --wait --json)
+GLOBAL_FLAGS=(--account "$ACCOUNT_NAME" --accounts-file "$ACCOUNTS_FILE" --json)
+if [[ -n "$CAST_PROFILE" ]]; then
+  GLOBAL_FLAGS=(--profile "$CAST_PROFILE" "${GLOBAL_FLAGS[@]}")
+fi
+TX_FLAGS=(--url "$RPC_URL")
 
 load_from_deploy() {
   local key="$1"
@@ -121,36 +126,39 @@ if [[ -z "${PATH_LOOK_ADDRESS:-}" ]]; then
   exit 1
 fi
 
-echo "Using sncast with url=$RPC_URL, account=$ACCOUNT_NAME, accounts=$ACCOUNTS_FILE"
+echo "Using sncast with url=$RPC_URL (profile $CAST_PROFILE, account $ACCOUNT_NAME)"
 echo "PathLook @ $PATH_LOOK_ADDRESS"
 
 SVG_CALL=$(
-  sncast "${CAST_FLAGS[@]}" \
-    call \
+  sncast call \
     --contract-address "$PATH_LOOK_ADDRESS" \
     --function generate_svg_data_uri \
-    --calldata "$TOKEN_ID" 0 0 0
+    --calldata "$TOKEN_ID" 0 0 0 \
+    "${GLOBAL_FLAGS[@]}" \
+    "${TX_FLAGS[@]}"
 )
 SVG_TEXT=$(decode_call_result "svg" <<<"$SVG_CALL")
 echo "generate_svg_data_uri ok (length ${#SVG_TEXT})"
 
 META_CALL=$(
-  sncast "${CAST_FLAGS[@]}" \
-    call \
+  sncast call \
     --contract-address "$PATH_LOOK_ADDRESS" \
     --function get_token_metadata \
-    --calldata "$TOKEN_ID" 0 0 0
+    --calldata "$TOKEN_ID" 0 0 0 \
+    "${GLOBAL_FLAGS[@]}" \
+    "${TX_FLAGS[@]}"
 )
 META_TEXT=$(decode_call_result "metadata" <<<"$META_CALL")
 echo "get_token_metadata ok (length ${#META_TEXT})"
 
 if [[ -n "${STEP_CURVE_ADDRESS:-}" ]]; then
   STEP_CALL=$(
-    sncast "${CAST_FLAGS[@]}" \
-      call \
+    sncast call \
       --contract-address "$STEP_CURVE_ADDRESS" \
       --function d_from_flattened_xy \
-      --calldata 6 0 0 512 0 512 512 3
+      --calldata 6 0 0 512 0 512 512 3 \
+      "${GLOBAL_FLAGS[@]}" \
+      "${TX_FLAGS[@]}"
   )
   STEP_TEXT=$(decode_call_result "step_curve" <<<"$STEP_CALL")
   echo "StepCurve d_from_flattened_xy ok (length ${#STEP_TEXT})"
