@@ -56,6 +56,15 @@ print(value)
 PY
 }
 
+compute_class_hash() {
+  local artifact="$1"
+  if command -v starkli >/dev/null 2>&1 && [[ -f "$artifact" ]]; then
+    starkli class-hash "$artifact"
+  else
+    echo ""
+  fi
+}
+
 log_summary() {
   echo "Writing deployment summary to $SUMMARY_FILE"
   cat >"$SUMMARY_FILE" <<EOF
@@ -79,8 +88,17 @@ echo "Building dependencies..."
 (cd "$CONTRACTS_DIR" && scarb build)
 
 echo "Declaring Pprf..."
+set +e
 PPRF_DECLARE=$(cd "$REPO_ROOT/../pprf" && sncast "${GLOBAL_FLAGS[@]}" declare --contract-name Pprf --package glyph_pprf --url "$RPC_URL")
+declare_status=$?
+set -e
+if [[ $declare_status -ne 0 ]]; then
+  echo "Pprf declare failed (continuing, maybe already declared)"
+fi
 PPRF_CLASS_HASH=$(extract_json_field "class_hash" <<<"$PPRF_DECLARE")
+if [[ -z "$PPRF_CLASS_HASH" ]]; then
+  PPRF_CLASS_HASH=$(compute_class_hash "$REPO_ROOT/../pprf/target/dev/glyph_pprf_Pprf.contract_class.json")
+fi
 [[ -n "$PPRF_CLASS_HASH" ]] || { echo "Failed to parse Pprf class hash"; exit 1; }
 
 echo "Deploying Pprf..."
@@ -89,8 +107,17 @@ PPRF_ADDRESS=$(extract_json_field "contract_address" <<<"$PPRF_DEPLOY")
 [[ -n "$PPRF_ADDRESS" ]] || { echo "Failed to parse Pprf contract address"; exit 1; }
 
 echo "Declaring StepCurve..."
+set +e
 STEP_CURVE_DECLARE=$(cd "$REPO_ROOT/../step-curve" && sncast "${GLOBAL_FLAGS[@]}" declare --contract-name StepCurve --package step_curve --url "$RPC_URL")
+declare_status=$?
+set -e
+if [[ $declare_status -ne 0 ]]; then
+  echo "StepCurve declare failed (continuing, maybe already declared)"
+fi
 STEP_CURVE_CLASS_HASH=$(extract_json_field "class_hash" <<<"$STEP_CURVE_DECLARE")
+if [[ -z "$STEP_CURVE_CLASS_HASH" ]]; then
+  STEP_CURVE_CLASS_HASH=$(compute_class_hash "$REPO_ROOT/../step-curve/target/dev/step_curve_StepCurve.contract_class.json")
+fi
 [[ -n "$STEP_CURVE_CLASS_HASH" ]] || { echo "Failed to parse StepCurve class hash"; exit 1; }
 
 echo "Deploying StepCurve..."
@@ -99,8 +126,17 @@ STEP_CURVE_ADDRESS=$(extract_json_field "contract_address" <<<"$STEP_CURVE_DEPLO
 [[ -n "$STEP_CURVE_ADDRESS" ]] || { echo "Failed to parse StepCurve contract address"; exit 1; }
 
 echo "Declaring PathLook..."
+set +e
 PATH_LOOK_DECLARE=$(cd "$CONTRACTS_DIR" && sncast "${GLOBAL_FLAGS[@]}" declare --contract-name PathLook --package path_look --url "$RPC_URL")
+declare_status=$?
+set -e
+if [[ $declare_status -ne 0 ]]; then
+  echo "PathLook declare failed (continuing, maybe already declared)"
+fi
 PATH_LOOK_CLASS_HASH=$(extract_json_field "class_hash" <<<"$PATH_LOOK_DECLARE")
+if [[ -z "$PATH_LOOK_CLASS_HASH" ]]; then
+  PATH_LOOK_CLASS_HASH=$(compute_class_hash "$CONTRACTS_DIR/target/dev/path_look_PathLook.contract_class.json")
+fi
 [[ -n "$PATH_LOOK_CLASS_HASH" ]] || { echo "Failed to parse PathLook class hash"; exit 1; }
 
 echo "Deploying PathLook..."
