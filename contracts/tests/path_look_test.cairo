@@ -1,5 +1,6 @@
 use core::array::{ArrayTrait, Span};
 use core::result::ResultTrait;
+use core::byte_array::ByteArrayTrait;
 use path_look::PathLook::{IPathLookDispatcher, IPathLookDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, DeclareResultTrait};
 use starknet::ContractAddress;
@@ -115,4 +116,67 @@ fn metadata_returns_payload() {
 
     let metadata = dispatcher.get_token_metadata(5, false, true, false);
     assert(metadata.len() > 0_u32, 'meta empty');
+}
+
+fn contains_bytes(haystack: @ByteArray, needle: @ByteArray) -> bool {
+    let hay_len = haystack.len();
+    let ned_len = needle.len();
+    if ned_len == 0_usize {
+        return true;
+    }
+    if ned_len > hay_len {
+        return false;
+    }
+    let mut i: usize = 0_usize;
+    while i + ned_len <= hay_len {
+        let mut j: usize = 0_usize;
+        let mut matched = true;
+        while j < ned_len {
+            if haystack.at(i + j) != needle.at(j) {
+                matched = false;
+                break;
+            }
+            j = j + 1_usize;
+        }
+        if matched {
+            return true;
+        }
+        i = i + 1_usize;
+    }
+    false
+}
+
+#[test]
+fn svg_hides_minted_and_sigma_changes() {
+    let mock = deploy_mock_pprf(123_456_u32);
+    let step_curve = deploy_step_curve();
+    let contract = deploy_path_look(mock, step_curve);
+    let dispatcher = IPathLookDispatcher { contract_address: contract };
+
+    // All strands visible; sigma should be 30
+    let svg_all = dispatcher.generate_svg(42, false, false, false);
+    assert(contains_bytes(@svg_all, @"id=\"thought-src\""), 'miss thought');
+    assert(contains_bytes(@svg_all, @"id=\"will-src\""), 'miss will');
+    assert(contains_bytes(@svg_all, @"id=\"awa-src\""), 'miss awa');
+    assert(contains_bytes(@svg_all, @"stdDeviation=\"30\""), 'miss sigma30');
+
+    // Thought minted hides that strand; sigma drops to 3
+    let svg_thought = dispatcher.generate_svg(42, true, false, false);
+    assert(!contains_bytes(@svg_thought, @"id=\"thought-src\""), 'thought still');
+    assert(contains_bytes(@svg_thought, @"id=\"will-src\""), 'miss will2');
+    assert(contains_bytes(@svg_thought, @"id=\"awa-src\""), 'miss awa2');
+    assert(contains_bytes(@svg_thought, @"stdDeviation=\"3\""), 'miss sigma3');
+}
+
+#[test]
+fn metadata_reflects_flags() {
+    let mock = deploy_mock_pprf(7_u32);
+    let step_curve = deploy_step_curve();
+    let contract = deploy_path_look(mock, step_curve);
+    let dispatcher = IPathLookDispatcher { contract_address: contract };
+
+    let metadata = dispatcher.get_token_metadata(9, true, false, true);
+    assert(contains_bytes(@metadata, @"\"Thought Minted\",\"value\":true"), 'meta thought');
+    assert(contains_bytes(@metadata, @"\"Will Minted\",\"value\":false"), 'meta will');
+    assert(contains_bytes(@metadata, @"\"Awa Minted\",\"value\":true"), 'meta awa');
 }
