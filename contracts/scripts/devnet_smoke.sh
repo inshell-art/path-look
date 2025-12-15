@@ -9,10 +9,8 @@ TOKEN_ID="${TOKEN_ID:-1}"
 
 RPC_URL="${RPC_URL:-http://127.0.0.1:5050}"
 CAST_PROFILE="${CAST_PROFILE:-}"
-ACCOUNT_NAME="${ACCOUNT_NAME:-predeployed}"
-ACCOUNTS_FILE="${ACCOUNTS_FILE:-$HOME/.starknet_accounts/starknet_open_zeppelin_accounts.json}"
 
-GLOBAL_FLAGS=(--account "$ACCOUNT_NAME" --accounts-file "$ACCOUNTS_FILE" --json)
+GLOBAL_FLAGS=(--json)
 if [[ -n "$CAST_PROFILE" ]]; then
   GLOBAL_FLAGS=(--profile "$CAST_PROFILE" "${GLOBAL_FLAGS[@]}")
 fi
@@ -56,13 +54,15 @@ PY
 
 decode_call_result() {
   local label="$1"
-  python - "$label" <<'PY'
+  local raw="$2"
+  RAW_INPUT="$raw" python - "$label" <<'PY'
 import json
 import re
 import sys
+import os
 
 label = sys.argv[1]
-raw = sys.stdin.read()
+raw = os.environ.get("RAW_INPUT", "")
 
 def to_int_list(seq):
     out = []
@@ -86,29 +86,33 @@ def find_list(obj):
 payload = None
 try:
     data = json.loads(raw)
-    seq = find_list(data)
-    if seq is not None:
-        payload = to_int_list(seq)
+    if isinstance(data, dict) and "response" in data and isinstance(data["response"], str):
+        payload = data["response"].encode("utf-8")
+    else:
+        seq = find_list(data)
+        if seq is not None:
+            payload = bytes(to_int_list(seq))
 except Exception:
     payload = None
 
 if payload is None:
-    match = re.search(r"call_result:\s*\[(.*)\]", raw, re.S)
-    if match:
-        nums = re.findall(r"0x[0-9a-fA-F]+|\d+", match.group(1))
-        payload = [int(x, 16) if x.startswith("0x") else int(x) for x in nums]
+    if "<svg" in raw or "data:image/svg+xml" in raw:
+        payload = raw.encode("utf-8")
+    else:
+        match = re.search(r"call_result:\s*\[(.*)\]", raw, re.S)
+        if match:
+            nums = re.findall(r"0x[0-9a-fA-F]+|\d+", match.group(1))
+            payload = bytes(int(x, 16) if x.startswith("0x") else int(x) for x in nums)
 
-if not payload:
+if payload is None or len(payload) == 0:
     sys.exit(f"no call_result found for {label}")
 
-if payload[0] == len(payload) - 1:
-    payload = payload[1:]
-
-decoded = bytes(v % 256 for v in payload)
-text = decoded.decode("utf-8", errors="ignore")
+text = payload.decode("utf-8", errors="ignore")
+if text.startswith('"') and text.endswith('"'):
+    text = text[1:-1]
 if not text:
     sys.exit(f"{label} returned empty payload")
-if label == "svg" and not text.startswith("<svg"):
+if label == "svg" and not (text.startswith("<svg") or text.startswith("data:image/svg+xml")):
     sys.exit("SVG payload does not start with <svg")
 if label == "metadata" and not text.startswith("{"):
     sys.exit("Metadata payload does not start with {")
@@ -126,41 +130,38 @@ if [[ -z "${PATH_LOOK_ADDRESS:-}" ]]; then
   exit 1
 fi
 
-echo "Using sncast with url=$RPC_URL (profile $CAST_PROFILE, account $ACCOUNT_NAME)"
+echo "Using sncast with url=$RPC_URL (profile $CAST_PROFILE)"
 echo "PathLook @ $PATH_LOOK_ADDRESS"
 
 SVG_CALL=$(
-  sncast call \
+  sncast "${GLOBAL_FLAGS[@]}" call \
     --contract-address "$PATH_LOOK_ADDRESS" \
     --function generate_svg_data_uri \
     --calldata "$TOKEN_ID" 0 0 0 \
-    "${GLOBAL_FLAGS[@]}" \
-    "${TX_FLAGS[@]}"
+    "${TX_FLAGS[@]}" 2>&1
 )
-SVG_TEXT=$(decode_call_result "svg" <<<"$SVG_CALL")
+SVG_TEXT=$(decode_call_result "svg" "$SVG_CALL")
 echo "generate_svg_data_uri ok (length ${#SVG_TEXT})"
 
 META_CALL=$(
-  sncast call \
+  sncast "${GLOBAL_FLAGS[@]}" call \
     --contract-address "$PATH_LOOK_ADDRESS" \
     --function get_token_metadata \
     --calldata "$TOKEN_ID" 0 0 0 \
-    "${GLOBAL_FLAGS[@]}" \
-    "${TX_FLAGS[@]}"
+    "${TX_FLAGS[@]}" 2>&1
 )
-META_TEXT=$(decode_call_result "metadata" <<<"$META_CALL")
+META_TEXT=$(decode_call_result "metadata" "$META_CALL")
 echo "get_token_metadata ok (length ${#META_TEXT})"
 
 if [[ -n "${STEP_CURVE_ADDRESS:-}" ]]; then
   STEP_CALL=$(
-    sncast call \
+    sncast "${GLOBAL_FLAGS[@]}" call \
       --contract-address "$STEP_CURVE_ADDRESS" \
       --function d_from_flattened_xy \
       --calldata 6 0 0 512 0 512 512 3 \
-      "${GLOBAL_FLAGS[@]}" \
-      "${TX_FLAGS[@]}"
+      "${TX_FLAGS[@]}" 2>&1
   )
-  STEP_TEXT=$(decode_call_result "step_curve" <<<"$STEP_CALL")
+  STEP_TEXT=$(decode_call_result "step_curve" "$STEP_CALL")
   echo "StepCurve d_from_flattened_xy ok (length ${#STEP_TEXT})"
 fi
 

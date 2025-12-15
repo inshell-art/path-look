@@ -9,8 +9,8 @@ SUMMARY_FILE="${SUMMARY_FILE:-$REPO_ROOT/devnet-deploy.json}"
 
 RPC_URL="${RPC_URL:-http://127.0.0.1:5050}"
 CAST_PROFILE="${CAST_PROFILE:-}"
-ACCOUNT_NAME="${ACCOUNT_NAME:-predeployed}"
-ACCOUNTS_FILE="${ACCOUNTS_FILE:-$HOME/.starknet_accounts/starknet_open_zeppelin_accounts.json}"
+ACCOUNT_NAME="${ACCOUNT_NAME:-dev_deployer}"
+ACCOUNTS_FILE="${ACCOUNTS_FILE:-$HOME/.starknet_accounts/devnet_oz_accounts.json}"
 
 GLOBAL_FLAGS=(--account "$ACCOUNT_NAME" --accounts-file "$ACCOUNTS_FILE" --wait --json)
 if [[ -n "$CAST_PROFILE" ]]; then

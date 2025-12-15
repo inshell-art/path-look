@@ -27,6 +27,7 @@ Use the helper scripts from the repo root:
 ```
 
 Addresses and class hashes are written to `devnet-deploy.json`.
+Defaults assume a funded account `dev_deployer` in `~/.starknet_accounts/devnet_oz_accounts.json`; override with `ACCOUNT_NAME`/`ACCOUNTS_FILE` if needed.
 
 Manual steps (if you prefer):
 1. Deploy `Pprf`.
