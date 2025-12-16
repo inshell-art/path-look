@@ -1,5 +1,6 @@
 use core::array::{ArrayTrait, Span};
 use core::result::ResultTrait;
+use core::option::OptionTrait;
 use core::byte_array::ByteArrayTrait;
 use path_look::PathLook::{IPathLookDispatcher, IPathLookDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, DeclareResultTrait};
@@ -132,13 +133,25 @@ fn contains_bytes(haystack: @ByteArray, needle: @ByteArray) -> bool {
         let mut j: usize = 0_usize;
         let mut matched = true;
         while j < ned_len {
-            if haystack.at(i + j) != needle.at(j) {
+            if haystack.at(i + j).unwrap() != needle.at(j).unwrap() {
                 matched = false;
                 break;
             }
             j = j + 1_usize;
         }
         if matched {
+            return true;
+        }
+        i = i + 1_usize;
+    }
+    false
+}
+
+fn has_byte(data: @ByteArray, needle: u8) -> bool {
+    let len = data.len();
+    let mut i: usize = 0_usize;
+    while i < len {
+        if data.at(i).unwrap() == needle {
             return true;
         }
         i = i + 1_usize;
@@ -155,17 +168,17 @@ fn svg_hides_minted_and_sigma_changes() {
 
     // All strands visible; sigma should be 30
     let svg_all = dispatcher.generate_svg(42, false, false, false);
-    assert(contains_bytes(@svg_all, @"id=\"thought-src\""), 'miss thought');
-    assert(contains_bytes(@svg_all, @"id=\"will-src\""), 'miss will');
-    assert(contains_bytes(@svg_all, @"id=\"awa-src\""), 'miss awa');
-    assert(contains_bytes(@svg_all, @"stdDeviation=\"30\""), 'miss sigma30');
+    assert(contains_bytes(@svg_all, @"id='thought-src'"), 'miss thought');
+    assert(contains_bytes(@svg_all, @"id='will-src'"), 'miss will');
+    assert(contains_bytes(@svg_all, @"id='awa-src'"), 'miss awa');
+    assert(contains_bytes(@svg_all, @"stdDeviation='30'"), 'miss sigma30');
 
     // Thought minted hides that strand; sigma drops to 3
     let svg_thought = dispatcher.generate_svg(42, true, false, false);
-    assert(!contains_bytes(@svg_thought, @"id=\"thought-src\""), 'thought still');
-    assert(contains_bytes(@svg_thought, @"id=\"will-src\""), 'miss will2');
-    assert(contains_bytes(@svg_thought, @"id=\"awa-src\""), 'miss awa2');
-    assert(contains_bytes(@svg_thought, @"stdDeviation=\"3\""), 'miss sigma3');
+    assert(!contains_bytes(@svg_thought, @"id='thought-src'"), 'thought still');
+    assert(contains_bytes(@svg_thought, @"id='will-src'"), 'miss will2');
+    assert(contains_bytes(@svg_thought, @"id='awa-src'"), 'miss awa2');
+    assert(contains_bytes(@svg_thought, @"stdDeviation='3'"), 'miss sigma3');
 }
 
 #[test]
@@ -179,4 +192,30 @@ fn metadata_reflects_flags() {
     assert(contains_bytes(@metadata, @"\"Thought Minted\",\"value\":true"), 'meta thought');
     assert(contains_bytes(@metadata, @"\"Will Minted\",\"value\":false"), 'meta will');
     assert(contains_bytes(@metadata, @"\"Awa Minted\",\"value\":true"), 'meta awa');
+}
+
+#[test]
+fn svg_has_no_newlines() {
+    let mock = deploy_mock_pprf(1_u32);
+    let step_curve = deploy_step_curve();
+    let contract = deploy_path_look(mock, step_curve);
+    let dispatcher = IPathLookDispatcher { contract_address: contract };
+
+    let svg = dispatcher.generate_svg(3, false, false, false);
+    assert(!has_byte(@svg, 10_u8), 'contains newline');
+    assert(!has_byte(@svg, 13_u8), 'contains carriage');
+}
+
+#[test]
+fn data_uri_is_percent_encoded() {
+    let mock = deploy_mock_pprf(2_u32);
+    let step_curve = deploy_step_curve();
+    let contract = deploy_path_look(mock, step_curve);
+    let dispatcher = IPathLookDispatcher { contract_address: contract };
+
+    let uri = dispatcher.generate_svg_data_uri(4, false, false, false);
+    assert(contains_bytes(@uri, @"data:image/svg+xml;charset=UTF-8,"), 'missing prefix');
+    assert(contains_bytes(@uri, @"%3Csvg"), 'missing encoded svg tag');
+    assert(contains_bytes(@uri, @"%23lightUp"), 'missing encoded hash');
+    assert(!contains_bytes(@uri, @"<svg"), 'raw svg present');
 }
