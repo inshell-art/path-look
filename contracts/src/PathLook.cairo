@@ -2,7 +2,7 @@
 pub mod PathLook {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArrayTrait;
-    use core::option::OptionTrait;
+    use core::option::{Option, OptionTrait};
     use path_look::rng;
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -40,14 +40,19 @@ pub mod PathLook {
         y: i128,
     }
 
+    #[derive(Drop)]
+    struct Strand {
+        rank: u8,
+        path: ByteArray,
+        r: felt252,
+        g: felt252,
+        b: felt252,
+    }
+
     #[abi(embed_v0)]
     impl PathLookImpl of super::IPathLook<ContractState> {
         fn generate_svg(
-            self: @ContractState,
-            token_id: felt252,
-            if_thought_minted: bool,
-            if_will_minted: bool,
-            if_awa_minted: bool,
+            self: @ContractState, token_id: felt252, thought_rank: u8, will_rank: u8, awa_rank: u8,
         ) -> ByteArray {
             const WIDTH: u32 = 1024;
             const HEIGHT: u32 = 1024;
@@ -59,6 +64,17 @@ pub mod PathLook {
             let stroke_w = self._max_u32(1, self._round_div(100, step_number));
 
             let targets = self._find_targets(token_id, WIDTH, HEIGHT, step_number);
+
+            let mut ideal_steps: Array<Step> = array![];
+            let mut t_i: usize = 0_usize;
+            while t_i < targets.len() {
+                let t = *targets.at(t_i);
+                ideal_steps.append(Step { x: t.x, y: t.y });
+                t_i = t_i + 1_usize;
+            }
+            let raw_ideal_path = self._curve_d(@ideal_steps, sharpness);
+            let ideal_path = self._strip_newlines(@raw_ideal_path);
+            let ideal_stroke_w = self._max_u32(1, self._round_div(stroke_w, 2_u32));
 
             let thought_steps = self
                 ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_THOUGHT_DX, LABEL_THOUGHT_DY);
@@ -75,61 +91,106 @@ pub mod PathLook {
             let raw_awa_path = self._curve_d(@awa_steps, sharpness);
             let awa_path = self._strip_newlines(@raw_awa_path);
 
-            let all_not_minted = (!if_thought_minted) && (!if_will_minted) && (!if_awa_minted);
-            let sigma = if all_not_minted {
-                30_u32
+            let mut minted: Array<Strand> = array![];
+            let mut thought_opt = Option::Some(thought_path);
+            let mut will_opt = Option::Some(will_path);
+            let mut awa_opt = Option::Some(awa_path);
+            let mut r_loop: u8 = 1_u8;
+            while r_loop <= 3_u8 {
+                if thought_rank == r_loop {
+                    let current = thought_opt;
+                    match current {
+                        Option::Some(path_val) => {
+                            minted.append(Strand { rank: thought_rank, path: path_val, r: 0, g: 0, b: 255 });
+                        },
+                        Option::None => {},
+                    }
+                    thought_opt = Option::None;
+                }
+                if will_rank == r_loop {
+                    let current = will_opt;
+                    match current {
+                        Option::Some(path_val) => {
+                            minted.append(Strand { rank: will_rank, path: path_val, r: 255, g: 0, b: 0 });
+                        },
+                        Option::None => {},
+                    }
+                    will_opt = Option::None;
+                }
+                if awa_rank == r_loop {
+                    let current = awa_opt;
+                    match current {
+                        Option::Some(path_val) => {
+                            minted.append(Strand { rank: awa_rank, path: path_val, r: 0, g: 255, b: 0 });
+                        },
+                        Option::None => {},
+                    }
+                    awa_opt = Option::None;
+                }
+                r_loop = r_loop + 1_u8;
+            }
+
+            let any_minted = minted.len() > 0_usize;
+            let sigma = if any_minted {
+                self._random_range(token_id, LABEL_SHARPNESS, 1, 3, 30)
             } else {
-                3_u32
+                0_u32
             };
 
             let mut defs: ByteArray = Default::default();
-            if if_thought_minted { // Minted token hides this strand.
-            } else {
-                defs.append(@"<g id='thought-src' filter='url(#lightUp)'><path id='path_thought' d='");
-                defs.append(@thought_path);
-                defs.append(@"' stroke='rgb(0,0,255)' stroke-width='");
-                defs.append(@self._u32_to_string(stroke_w));
+                defs.append(@"<g id='ideal-src'><path id='path_ideal' d='");
+                defs.append(@ideal_path);
+                defs.append(@"' stroke='rgb(255,255,255)' stroke-width='");
+                defs.append(@self._u32_to_string(ideal_stroke_w));
                 defs.append(@"' fill='none' stroke-linecap='round' stroke-linejoin='round' /></g>");
-            }
 
-            if if_will_minted { // Minted token hides this strand.
-            } else {
-                defs.append(@"<g id='will-src' filter='url(#lightUp)'><path id='path_will' d='");
-                defs.append(@will_path);
-                defs.append(@"' stroke='rgb(255,0,0)' stroke-width='");
-                defs.append(@self._u32_to_string(stroke_w));
-                defs.append(@"' fill='none' stroke-linecap='round' stroke-linejoin='round' /></g>");
-            }
+            if any_minted {
+                let mut k: usize = 0_usize;
+                while k < minted.len() {
+                    let strand = minted.at(k);
+                    let rank = strand.rank;
+                    let rank_u32: u32 = (*rank).into();
+                    let path = strand.path;
+                    let r = strand.r;
+                    let g = strand.g;
+                    let b = strand.b;
+                    defs.append(@"<g id='strand-");
+                    defs.append(@self._u32_to_string(rank_u32));
+                    defs.append(@"' filter='url(#lightUp)'><path d='");
+                    defs.append(path);
+                    defs.append(@"' stroke='rgb(");
+                    defs.append(@self._u32_to_string((*r).try_into().unwrap()));
+                    defs.append(@",");
+                    defs.append(@self._u32_to_string((*g).try_into().unwrap()));
+                    defs.append(@",");
+                    defs.append(@self._u32_to_string((*b).try_into().unwrap()));
+                    defs.append(@"' stroke-width='");
+                    defs.append(@self._u32_to_string(stroke_w));
+                    defs.append(@"' fill='none' stroke-linecap='round' stroke-linejoin='round' /></g>");
+                    k = k + 1_usize;
+                }
 
-            if if_awa_minted { // Minted token hides this strand.
-            } else {
-                defs.append(@"<g id='awa-src' filter='url(#lightUp)'><path id='path_awa' d='");
-                defs.append(@awa_path);
-                defs.append(@"' stroke='rgb(0,255,0)' stroke-width='");
-                defs.append(@self._u32_to_string(stroke_w));
-                defs.append(@"' fill='none' stroke-linecap='round' stroke-linejoin='round' /></g>");
+                defs.append(
+                    @"<filter id='lightUp' filterUnits='userSpaceOnUse' x='-100%' y='-100%' width='200%' height='200%' color-interpolation-filters='sRGB'>",
+                );
+                defs.append(@"<feGaussianBlur in='SourceGraphic' stdDeviation='");
+                defs.append(@self._u32_to_string(sigma));
+                defs.append(@"' result='blur'></feGaussianBlur>");
+                defs.append(@"<feMerge><feMergeNode in='blur'/><feMergeNode in='blur'/><feMergeNode in='SourceGraphic'/></feMerge></filter>");
             }
-
-            defs.append(
-                @"<filter id='lightUp' filterUnits='userSpaceOnUse' x='-100%' y='-100%' width='200%' height='200%' color-interpolation-filters='sRGB'>",
-            );
-            defs.append(@"<feGaussianBlur in='SourceGraphic' stdDeviation='");
-            defs.append(@self._u32_to_string(sigma));
-            defs.append(@"' result='blur'></feGaussianBlur>");
-            defs.append(@"<feMerge><feMergeNode in='blur'/><feMergeNode in='blur'/><feMergeNode in='SourceGraphic'/></feMerge></filter>");
 
             let mut uses: ByteArray = Default::default();
-            if if_thought_minted { // Minted token hides this strand.
-            } else {
-                uses.append(@"<use href='#thought-src' style='mix-blend-mode:lighten;'/>");
-            }
-            if if_will_minted { // Minted token hides this strand.
-            } else {
-                uses.append(@"<use href='#will-src' style='mix-blend-mode:lighten;'/>");
-            }
-            if if_awa_minted { // Minted token hides this strand.
-            } else {
-                uses.append(@"<use href='#awa-src' style='mix-blend-mode:lighten;'/>");
+            uses.append(@"<use href='#ideal-src' style='mix-blend-mode:lighten;'/>");
+            if any_minted {
+                let mut u: usize = 0_usize;
+                while u < minted.len() {
+                    let rank = minted.at(u).rank;
+                    let rank_u32: u32 = (*rank).into();
+                    uses.append(@"<use href='#strand-");
+                    uses.append(@self._u32_to_string(rank_u32));
+                    uses.append(@"' style='mix-blend-mode:lighten;'/>");
+                    u = u + 1_usize;
+                }
             }
 
             let mut svg: ByteArray = Default::default();
@@ -156,11 +217,11 @@ pub mod PathLook {
         fn generate_svg_data_uri(
             self: @ContractState,
             token_id: felt252,
-            if_thought_minted: bool,
-            if_will_minted: bool,
-            if_awa_minted: bool,
+            thought_rank: u8,
+            will_rank: u8,
+            awa_rank: u8,
         ) -> ByteArray {
-            let svg = self.generate_svg(token_id, if_thought_minted, if_will_minted, if_awa_minted);
+            let svg = self.generate_svg(token_id, thought_rank, will_rank, awa_rank);
             let encoded = self._percent_encode(@svg);
             let mut data_uri: ByteArray = Default::default();
             data_uri.append(@"data:image/svg+xml;charset=UTF-8,");
@@ -171,11 +232,14 @@ pub mod PathLook {
         fn get_token_metadata(
             self: @ContractState,
             token_id: felt252,
-            if_thought_minted: bool,
-            if_will_minted: bool,
-            if_awa_minted: bool,
+            thought_rank: u8,
+            will_rank: u8,
+            awa_rank: u8,
         ) -> ByteArray {
             let token_id_str = self._felt_to_string(token_id);
+            let thought_minted = thought_rank != 0_u8;
+            let will_minted = will_rank != 0_u8;
+            let awa_minted = awa_rank != 0_u8;
 
             const WIDTH: u32 = 1024;
             const HEIGHT: u32 = 1024;
@@ -185,7 +249,7 @@ pub mod PathLook {
             let point_count = targets.len().try_into().unwrap();
             let mut metadata: ByteArray = Default::default();
             let data_uri = self
-                .generate_svg_data_uri(token_id, if_thought_minted, if_will_minted, if_awa_minted);
+                .generate_svg_data_uri(token_id, thought_rank, will_rank, awa_rank);
 
             metadata.append(@"{\"name\":\"PATH #");
             metadata.append(@token_id_str);
@@ -197,15 +261,15 @@ pub mod PathLook {
             metadata.append(@"\",\"attributes\":[");
 
             metadata.append(@"{\"trait_type\":\"Thought Minted\",\"value\":");
-            metadata.append(@self._bool_to_string(if_thought_minted));
+            metadata.append(@self._bool_to_string(thought_minted));
             metadata.append(@"},");
 
             metadata.append(@"{\"trait_type\":\"Will Minted\",\"value\":");
-            metadata.append(@self._bool_to_string(if_will_minted));
+            metadata.append(@self._bool_to_string(will_minted));
             metadata.append(@"},");
 
             metadata.append(@"{\"trait_type\":\"Awa Minted\",\"value\":");
-            metadata.append(@self._bool_to_string(if_awa_minted));
+            metadata.append(@self._bool_to_string(awa_minted));
             metadata.append(@"},");
 
             metadata.append(@"{\"trait_type\":\"Point Count\",\"value\":\"");
@@ -523,26 +587,26 @@ pub trait IPathLook<TContractState> {
     fn generate_svg(
         self: @TContractState,
         token_id: felt252,
-        if_thought_minted: bool,
-        if_will_minted: bool,
-        if_awa_minted: bool,
+        thought_rank: u8,
+        will_rank: u8,
+        awa_rank: u8,
     ) -> ByteArray;
 
     /// Generate SVG as data URI
     fn generate_svg_data_uri(
         self: @TContractState,
         token_id: felt252,
-        if_thought_minted: bool,
-        if_will_minted: bool,
-        if_awa_minted: bool,
+        thought_rank: u8,
+        will_rank: u8,
+        awa_rank: u8,
     ) -> ByteArray;
 
     /// Get complete token metadata in JSON format
     fn get_token_metadata(
         self: @TContractState,
         token_id: felt252,
-        if_thought_minted: bool,
-        if_will_minted: bool,
-        if_awa_minted: bool,
+        thought_rank: u8,
+        will_rank: u8,
+        awa_rank: u8,
     ) -> ByteArray;
 }

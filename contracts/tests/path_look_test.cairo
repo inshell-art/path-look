@@ -104,7 +104,7 @@ fn generate_svg_returns_payload() {
     let contract = deploy_path_look(mock, step_curve);
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
-    let svg = dispatcher.generate_svg(1, false, false, false);
+    let svg = dispatcher.generate_svg(1, 0, 0, 0);
     assert(svg.len() > 0_u32, 'svg empty');
 }
 
@@ -115,7 +115,7 @@ fn metadata_returns_payload() {
     let contract = deploy_path_look(mock, step_curve);
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
-    let metadata = dispatcher.get_token_metadata(5, false, true, false);
+    let metadata = dispatcher.get_token_metadata(5, 1, 0, 0);
     assert(metadata.len() > 0_u32, 'meta empty');
 }
 
@@ -166,19 +166,19 @@ fn svg_hides_minted_and_sigma_changes() {
     let contract = deploy_path_look(mock, step_curve);
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
-    // All strands visible; sigma should be 30
-    let svg_all = dispatcher.generate_svg(42, false, false, false);
-    assert(contains_bytes(@svg_all, @"id='thought-src'"), 'miss thought');
-    assert(contains_bytes(@svg_all, @"id='will-src'"), 'miss will');
-    assert(contains_bytes(@svg_all, @"id='awa-src'"), 'miss awa');
-    assert(contains_bytes(@svg_all, @"stdDeviation='30'"), 'miss sigma30');
+    // No colored strands yet; only ideal
+    let svg_ideal = dispatcher.generate_svg(42, 0, 0, 0);
+    assert(contains_bytes(@svg_ideal, @"id='ideal-src'"), 'ideal missing');
+    assert(!contains_bytes(@svg_ideal, @"strand-"), 'unexpected strand');
+    assert(!contains_bytes(@svg_ideal, @"stdDeviation='"), 'sigma should be absent');
 
-    // Thought minted hides that strand; sigma drops to 3
-    let svg_thought = dispatcher.generate_svg(42, true, false, false);
-    assert(!contains_bytes(@svg_thought, @"id='thought-src'"), 'thought still');
-    assert(contains_bytes(@svg_thought, @"id='will-src'"), 'miss will2');
-    assert(contains_bytes(@svg_thought, @"id='awa-src'"), 'miss awa2');
-    assert(contains_bytes(@svg_thought, @"stdDeviation='3'"), 'miss sigma3');
+    // Mixed ranks: will=1 (bottom), thought=2, awa=3 (top)
+    let svg_layers = dispatcher.generate_svg(42, 2, 1, 3);
+    assert(contains_bytes(@svg_layers, @"id='ideal-src'"), 'ideal missing layered');
+    assert(contains_bytes(@svg_layers, @"id='strand-1'"), 'strand1 missing');
+    assert(contains_bytes(@svg_layers, @"id='strand-2'"), 'strand2 missing');
+    assert(contains_bytes(@svg_layers, @"id='strand-3'"), 'strand3 missing');
+    assert(contains_bytes(@svg_layers, @"stdDeviation='"), 'sigma missing');
 }
 
 #[test]
@@ -188,7 +188,7 @@ fn metadata_reflects_flags() {
     let contract = deploy_path_look(mock, step_curve);
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
-    let metadata = dispatcher.get_token_metadata(9, true, false, true);
+    let metadata = dispatcher.get_token_metadata(9, 2, 0, 1);
     assert(contains_bytes(@metadata, @"\"Thought Minted\",\"value\":true"), 'meta thought');
     assert(contains_bytes(@metadata, @"\"Will Minted\",\"value\":false"), 'meta will');
     assert(contains_bytes(@metadata, @"\"Awa Minted\",\"value\":true"), 'meta awa');
@@ -201,7 +201,7 @@ fn svg_has_no_newlines() {
     let contract = deploy_path_look(mock, step_curve);
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
-    let svg = dispatcher.generate_svg(3, false, false, false);
+    let svg = dispatcher.generate_svg(3, 1, 0, 0);
     assert(!has_byte(@svg, 10_u8), 'contains newline');
     assert(!has_byte(@svg, 13_u8), 'contains carriage');
 }
@@ -213,7 +213,7 @@ fn data_uri_is_percent_encoded() {
     let contract = deploy_path_look(mock, step_curve);
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
-    let uri = dispatcher.generate_svg_data_uri(4, false, false, false);
+    let uri = dispatcher.generate_svg_data_uri(4, 0, 1, 0);
     assert(contains_bytes(@uri, @"data:image/svg+xml;charset=UTF-8,"), 'missing prefix');
     assert(contains_bytes(@uri, @"%3Csvg"), 'missing encoded svg tag');
     assert(contains_bytes(@uri, @"%23lightUp"), 'missing encoded hash');

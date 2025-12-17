@@ -48,9 +48,9 @@ sncast call \
 
 Parameters (calldata):
 - `token_id` (u32): Token identifier
-- `if_thought_minted` (bool): 1 or 0
-- `if_will_minted` (bool): 1 or 0
-- `if_awa_minted` (bool): 1 or 0
+- `thought_rank` (u8): 0 if unminted, otherwise 1–3 (lower is earlier minted)
+- `will_rank` (u8): 0 if unminted, otherwise 1–3
+- `awa_rank` (u8): 0 if unminted, otherwise 1–3
 
 ### Extract SVG Output
 
