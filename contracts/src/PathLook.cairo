@@ -98,32 +98,20 @@ pub mod PathLook {
             let mut r_loop: u8 = 1_u8;
             while r_loop <= 3_u8 {
                 if thought_rank == r_loop {
-                    let current = thought_opt;
-                    match current {
-                        Option::Some(path_val) => {
-                            minted.append(Strand { rank: thought_rank, path: path_val, r: 0, g: 0, b: 255 });
-                        },
-                        Option::None => {},
+                    if let Option::Some(path_val) = thought_opt {
+                        minted.append(Strand { rank: thought_rank, path: path_val, r: 0, g: 0, b: 255 });
                     }
                     thought_opt = Option::None;
                 }
                 if will_rank == r_loop {
-                    let current = will_opt;
-                    match current {
-                        Option::Some(path_val) => {
-                            minted.append(Strand { rank: will_rank, path: path_val, r: 255, g: 0, b: 0 });
-                        },
-                        Option::None => {},
+                    if let Option::Some(path_val) = will_opt {
+                        minted.append(Strand { rank: will_rank, path: path_val, r: 255, g: 0, b: 0 });
                     }
                     will_opt = Option::None;
                 }
                 if awa_rank == r_loop {
-                    let current = awa_opt;
-                    match current {
-                        Option::Some(path_val) => {
-                            minted.append(Strand { rank: awa_rank, path: path_val, r: 0, g: 255, b: 0 });
-                        },
-                        Option::None => {},
+                    if let Option::Some(path_val) = awa_opt {
+                        minted.append(Strand { rank: awa_rank, path: path_val, r: 0, g: 255, b: 0 });
                     }
                     awa_opt = Option::None;
                 }
