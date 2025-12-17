@@ -2,7 +2,7 @@ use core::array::{ArrayTrait, Span};
 use core::result::ResultTrait;
 use core::option::OptionTrait;
 use core::byte_array::ByteArrayTrait;
-use path_look::PathLook::{IPathLookDispatcher, IPathLookDispatcherTrait};
+use path_look::path_look::{IPathLookDispatcher, IPathLookDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, DeclareResultTrait};
 use starknet::ContractAddress;
 use step_curve::StepCurve::StepCurve;
@@ -189,9 +189,12 @@ fn metadata_reflects_flags() {
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
     let metadata = dispatcher.get_token_metadata(9, 2, 0, 1);
-    assert(contains_bytes(@metadata, @"\"Thought Minted\",\"value\":true"), 'meta thought');
-    assert(contains_bytes(@metadata, @"\"Will Minted\",\"value\":false"), 'meta will');
-    assert(contains_bytes(@metadata, @"\"Awa Minted\",\"value\":true"), 'meta awa');
+    assert(contains_bytes(@metadata, @"\"Thought Minted\",\"value\":\"Minted\""), 'meta thought');
+    assert(contains_bytes(@metadata, @"\"Will Minted\",\"value\":\"Unminted\""), 'meta will');
+    assert(contains_bytes(@metadata, @"\"Awa Minted\",\"value\":\"Minted\""), 'meta awa');
+    assert(contains_bytes(@metadata, @"\"Thought Rank\",\"value\":\"2\""), 'rank thought');
+    assert(contains_bytes(@metadata, @"\"Will Rank\",\"value\":\"None\""), 'rank will');
+    assert(contains_bytes(@metadata, @"\"Awa Rank\",\"value\":\"1\""), 'rank awa');
 }
 
 #[test]

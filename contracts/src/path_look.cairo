@@ -126,11 +126,11 @@ pub mod PathLook {
             };
 
             let mut defs: ByteArray = Default::default();
-                defs.append(@"<g id='ideal-src'><path id='path_ideal' d='");
-                defs.append(@ideal_path);
-                defs.append(@"' stroke='rgb(255,255,255)' stroke-width='");
-                defs.append(@self._u32_to_string(ideal_stroke_w));
-                defs.append(@"' fill='none' stroke-linecap='round' stroke-linejoin='round' /></g>");
+            defs.append(@"<g id='ideal-src'><path id='path_ideal' d='");
+            defs.append(@ideal_path);
+            defs.append(@"' stroke='rgb(255,255,255)' stroke-width='");
+            defs.append(@self._u32_to_string(ideal_stroke_w));
+            defs.append(@"' fill='none' stroke-linecap='round' stroke-linejoin='round' /></g>");
 
             if any_minted {
                 let mut k: usize = 0_usize;
@@ -248,17 +248,29 @@ pub mod PathLook {
             metadata.append(@token_id_str);
             metadata.append(@"\",\"attributes\":[");
 
-            metadata.append(@"{\"trait_type\":\"Thought Minted\",\"value\":");
-            metadata.append(@self._bool_to_string(thought_minted));
-            metadata.append(@"},");
+            metadata.append(@"{\"trait_type\":\"Thought Minted\",\"value\":\"");
+            metadata.append(@self._mint_state_string(thought_minted));
+            metadata.append(@"\"},");
 
-            metadata.append(@"{\"trait_type\":\"Will Minted\",\"value\":");
-            metadata.append(@self._bool_to_string(will_minted));
-            metadata.append(@"},");
+            metadata.append(@"{\"trait_type\":\"Will Minted\",\"value\":\"");
+            metadata.append(@self._mint_state_string(will_minted));
+            metadata.append(@"\"},");
 
-            metadata.append(@"{\"trait_type\":\"Awa Minted\",\"value\":");
-            metadata.append(@self._bool_to_string(awa_minted));
-            metadata.append(@"},");
+            metadata.append(@"{\"trait_type\":\"Awa Minted\",\"value\":\"");
+            metadata.append(@self._mint_state_string(awa_minted));
+            metadata.append(@"\"},");
+
+            metadata.append(@"{\"trait_type\":\"Thought Rank\",\"value\":\"");
+            metadata.append(@self._rank_to_string(thought_rank));
+            metadata.append(@"\"},");
+
+            metadata.append(@"{\"trait_type\":\"Will Rank\",\"value\":\"");
+            metadata.append(@self._rank_to_string(will_rank));
+            metadata.append(@"\"},");
+
+            metadata.append(@"{\"trait_type\":\"Awa Rank\",\"value\":\"");
+            metadata.append(@self._rank_to_string(awa_rank));
+            metadata.append(@"\"},");
 
             metadata.append(@"{\"trait_type\":\"Point Count\",\"value\":\"");
             metadata.append(@self._u32_to_string(point_count));
@@ -285,7 +297,7 @@ pub mod PathLook {
         }
 
         fn _max_u32(self: @ContractState, a: u32, b: u32) -> u32 {
-            if a >= b {
+            if a > b {
                 a
             } else {
                 b
@@ -294,80 +306,62 @@ pub mod PathLook {
 
         fn _round_div(self: @ContractState, numerator: u32, denominator: u32) -> u32 {
             if denominator == 0_u32 {
-                return 0_u32;
+                return numerator;
             }
-
-            (numerator + (denominator / 2_u32)) / denominator
+            (numerator + denominator / 2_u32) / denominator
         }
 
         fn _find_targets(
-            self: @ContractState, token_id: felt252, width: u32, height: u32, interior_count: u32,
+            self: @ContractState,
+            token_id: felt252,
+            width: u32,
+            height: u32,
+            count: u32,
         ) -> Array<Step> {
-            let padding_min = width / 10_u32;
-            let padding_max = width / 3_u32;
-            let padding = self._random_range(token_id, LABEL_PADDING, 0, padding_min, padding_max);
+            let padding = self._random_range(token_id, LABEL_PADDING, 0, 50_u32, 150_u32);
+            let max_x: i128 = (width - padding).into();
+            let max_y: i128 = (height - padding).into();
+            let min_x: i128 = padding.into();
+            let min_y: i128 = padding.into();
 
-            let edge_pad = padding;
-            let inner_w = width - 2_u32 * edge_pad;
-            let inner_h = height - 2_u32 * edge_pad;
+            let mut targets: Array<Step> = array![];
 
-            let mut interior: Array<Step> = array![];
-            let target_len_goal: usize = interior_count.try_into().unwrap();
-            while interior.len() < target_len_goal {
-                let idx: u32 = interior.len().try_into().unwrap();
-                let x_offset = self._random_range(token_id, LABEL_TARGET_X, idx, 0_u32, inner_w);
-                let y_offset = self._random_range(token_id, LABEL_TARGET_Y, idx, 0_u32, inner_h);
-
-                let x_val: u32 = edge_pad + x_offset;
-                let y_val: u32 = edge_pad + y_offset;
-                interior.append(Step { x: x_val.into(), y: y_val.into() });
+            let mut i: u32 = 0;
+            while i < count {
+                let x = self._random_range(token_id, LABEL_TARGET_X, i, min_x.try_into().unwrap(), max_x.try_into().unwrap());
+                let y = self._random_range(token_id, LABEL_TARGET_Y, i, min_y.try_into().unwrap(), max_y.try_into().unwrap());
+                targets.append(Step { x: x.into(), y: y.into() });
+                i = i + 1;
             }
 
-            let mut points: Array<Step> = array![];
-            let scale: i128 = width.into();
-            let offset: i128 = (height / 2_u32).into();
-            let start_x: i128 = -50_i128;
-            let start_y: i128 = offset;
-            points.append(Step { x: start_x, y: start_y });
-
-            let mut i: usize = 0_usize;
-            while i < interior.len() {
-                points.append(*interior.at(i));
-                i = i + 1_usize;
-            }
-
-            let end_x: i128 = scale + 50_i128;
-            let end_y: i128 = offset;
-            points.append(Step { x: end_x, y: end_y });
-
-            points
+            targets
         }
 
         fn _find_steps(
             self: @ContractState,
             token_id: felt252,
             targets: @Array<Step>,
-            width: u32,
-            height: u32,
+            max_x: u32,
+            max_y: u32,
             dx_label: felt252,
             dy_label: felt252,
         ) -> Array<Step> {
-            let mut steps: Array<Step> = array![];
-            let len = targets.len();
-            let max_dx = width / 100_u32;
-            let max_dy = height / 100_u32;
-            let max_x: i128 = width.into();
-            let max_y: i128 = height.into();
+            let max_dx = self._random_range(token_id, LABEL_PADDING, 0, 0_u32, 100);
+            let max_dy = self._random_range(token_id, LABEL_PADDING, 1, 0_u32, 100);
+            let max_x_i128: i128 = max_x.into();
+            let max_y_i128: i128 = max_y.into();
 
+            let mut steps: Array<Step> = array![];
             let mut i: usize = 0_usize;
+            let len = targets.len();
             while i < len {
                 let target = *targets.at(i);
                 let occurrence: u32 = i.try_into().unwrap();
                 let dx = self._random_range(token_id, dx_label, occurrence, 0_u32, max_dx);
                 let dy = self._random_range(token_id, dy_label, occurrence, 0_u32, max_dy);
 
-                let x = self._clamp_i128(target.x + dx.into(), 0_i128, max_x);
-                let y = self._clamp_i128(target.y + dy.into(), 0_i128, max_y);
+                let x = self._clamp_i128(target.x + dx.into(), 0_i128, max_x_i128);
+                let y = self._clamp_i128(target.y + dy.into(), 0_i128, max_y_i128);
 
                 steps.append(Step { x, y });
 
@@ -448,25 +442,22 @@ pub mod PathLook {
                 return "0";
             }
 
-            // Convert felt252 to u256 for easier manipulation
             let num_u256: u256 = value.into();
             let mut num = num_u256;
             let mut digits: Array<u8> = array![];
 
-            // Extract digits
             while num != 0 {
                 let digit: u8 = (num % 10).try_into().unwrap();
                 digits.append(digit);
                 num = num / 10;
             }
 
-            // Reverse and convert to string
             let mut result: ByteArray = Default::default();
             let mut i = digits.len();
             while i > 0 {
                 i -= 1;
                 let digit = *digits.at(i);
-                let digit_char = digit + 48; // ASCII '0' = 48
+                let digit_char = digit + 48;
                 result.append_byte(digit_char);
             }
 
@@ -474,31 +465,46 @@ pub mod PathLook {
         }
 
         fn _u32_to_string(self: @ContractState, value: u32) -> ByteArray {
-            if value == 0 {
+            if value == 0_u32 {
                 return "0";
             }
 
             let mut num = value;
             let mut digits: Array<u8> = array![];
 
-            // Extract digits
-            while num != 0 {
-                let digit: u8 = (num % 10).try_into().unwrap();
+            while num != 0_u32 {
+                let digit: u8 = (num % 10_u32).try_into().unwrap();
                 digits.append(digit);
-                num = num / 10;
+                num = num / 10_u32;
             }
 
-            // Reverse and convert to string
             let mut result: ByteArray = Default::default();
             let mut i = digits.len();
-            while i > 0 {
-                i -= 1;
+            while i > 0_usize {
+                i = i - 1_usize;
                 let digit = *digits.at(i);
-                let digit_char = digit + 48; // ASCII '0' = 48
+                let digit_char = digit + 48_u8;
                 result.append_byte(digit_char);
             }
 
             result
+        }
+
+        fn _mint_state_string(self: @ContractState, minted: bool) -> ByteArray {
+            if minted {
+                "Minted"
+            } else {
+                "Unminted"
+            }
+        }
+
+        fn _rank_to_string(self: @ContractState, rank: u8) -> ByteArray {
+            if rank == 0_u8 {
+                return "None";
+            }
+
+            let rank_u32: u32 = rank.into();
+            self._u32_to_string(rank_u32)
         }
 
         fn _strip_newlines(self: @ContractState, svg: @ByteArray) -> ByteArray {
@@ -518,13 +524,13 @@ pub mod PathLook {
         }
 
         fn _is_unreserved(self: @ContractState, b: u8) -> bool {
-            (b >= 48_u8 && b <= 57_u8) // 0-9
-                || (b >= 65_u8 && b <= 90_u8) // A-Z
-                || (b >= 97_u8 && b <= 122_u8) // a-z
-                || b == 45_u8 // -
-                || b == 46_u8 // .
-                || b == 95_u8 // _
-                || b == 126_u8 // ~
+            (b >= 48_u8 && b <= 57_u8)
+                || (b >= 65_u8 && b <= 90_u8)
+                || (b >= 97_u8 && b <= 122_u8)
+                || b == 45_u8
+                || b == 46_u8
+                || b == 95_u8
+                || b == 126_u8
         }
 
         fn _hex_nibble(self: @ContractState, n: u8) -> u8 {
@@ -559,19 +565,11 @@ pub mod PathLook {
             out
         }
 
-        fn _bool_to_string(self: @ContractState, value: bool) -> ByteArray {
-            if value {
-                "true"
-            } else {
-                "false"
-            }
-        }
     }
 }
 
 #[starknet::interface]
 pub trait IPathLook<TContractState> {
-    /// Generate raw SVG code for a given token_id and minting status
     fn generate_svg(
         self: @TContractState,
         token_id: felt252,
@@ -580,7 +578,6 @@ pub trait IPathLook<TContractState> {
         awa_rank: u8,
     ) -> ByteArray;
 
-    /// Generate SVG as data URI
     fn generate_svg_data_uri(
         self: @TContractState,
         token_id: felt252,
@@ -589,7 +586,6 @@ pub trait IPathLook<TContractState> {
         awa_rank: u8,
     ) -> ByteArray;
 
-    /// Get complete token metadata in JSON format
     fn get_token_metadata(
         self: @TContractState,
         token_id: felt252,

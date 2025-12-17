@@ -1,2 +1,2 @@
-pub mod PathLook;
+pub mod path_look;
 mod rng;
