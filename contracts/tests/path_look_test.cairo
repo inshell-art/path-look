@@ -175,9 +175,9 @@ fn svg_hides_minted_and_sigma_changes() {
     // Mixed ranks: will=1 (bottom), thought=2, awa=3 (top)
     let svg_layers = dispatcher.generate_svg(42, 2, 1, 3);
     assert(contains_bytes(@svg_layers, @"id='ideal-src'"), 'ideal missing layered');
-    assert(contains_bytes(@svg_layers, @"id='strand-1'"), 'strand1 missing');
-    assert(contains_bytes(@svg_layers, @"id='strand-2'"), 'strand2 missing');
-    assert(contains_bytes(@svg_layers, @"id='strand-3'"), 'strand3 missing');
+    assert(contains_bytes(@svg_layers, @"id='strand-thought'"), 'strand1 missing');
+    assert(contains_bytes(@svg_layers, @"id='strand-will'"), 'strand2 missing');
+    assert(contains_bytes(@svg_layers, @"id='strand-awa'"), 'strand3 missing');
     assert(contains_bytes(@svg_layers, @"stdDeviation='"), 'sigma missing');
 }
 
@@ -189,12 +189,11 @@ fn metadata_reflects_flags() {
     let dispatcher = IPathLookDispatcher { contract_address: contract };
 
     let metadata = dispatcher.get_token_metadata(9, 2, 0, 1);
-    assert(contains_bytes(@metadata, @"\"Thought Minted\",\"value\":\"Minted\""), 'meta thought');
-    assert(contains_bytes(@metadata, @"\"Will Minted\",\"value\":\"Unminted\""), 'meta will');
-    assert(contains_bytes(@metadata, @"\"Awa Minted\",\"value\":\"Minted\""), 'meta awa');
-    assert(contains_bytes(@metadata, @"\"Thought Rank\",\"value\":\"2\""), 'rank thought');
-    assert(contains_bytes(@metadata, @"\"Will Rank\",\"value\":\"None\""), 'rank will');
-    assert(contains_bytes(@metadata, @"\"Awa Rank\",\"value\":\"1\""), 'rank awa');
+    assert(contains_bytes(@metadata, @"\"Movement Order\",\"value\":\"AWA->THOUGHT->"), 'movement order');
+    assert(contains_bytes(@metadata, @"\"THOUGHT\",\"value\":\"Manifested\""), 'thought status');
+    assert(contains_bytes(@metadata, @"\"WILL\",\"value\":\"Latent\""), 'will status');
+    assert(contains_bytes(@metadata, @"\"AWA\",\"value\":\"Manifested\""), 'awa status');
+    assert(contains_bytes(@metadata, @"\"Breath\",\"value\":"), 'breath present');
 }
 
 #[test]

@@ -2,9 +2,9 @@
   "rpc_url": "http://127.0.0.1:5050",
   "account": "dev_deployer",
   "pprf_class_hash": "0x04db25300db2a6f90893136e20cda25274c87e8409efaf8ed650c2ac7c146097",
-  "pprf_address": "0x015d547c61edb9e140e6241ac5d2314ae820acd9a060864a347aaa9ffaab79fb",
+  "pprf_address": "0x02b65184d105adbf5359d3434559e865fadbe08c87e5c321e19dde42b9d3af36",
   "step_curve_class_hash": "0x0009719837a410a0e65bd43f31d36f0916c59ead252a439da7cb8578bf16fed4",
-  "step_curve_address": "0x04fe289fa61761b7021a08be3710ad4d3e81f63b3d5213c1987b0ace80c139b4",
-  "path_look_class_hash": "0x04bdc262bd7a1830617941a494ff4fa765a5dc6c10f2b77b8a5eafb1af03d3af",
-  "path_look_address": "0x009495e1f2e6e505c583ad18bb7a2ed9c4871590d875b221646838b6ad1ee77f"
+  "step_curve_address": "0x07423901603fbef628dc8627690971b203a383cc58c31fe4cf8b8e4eddece1c7",
+  "path_look_class_hash": "0x03c628a1fb2c0406429f99786477c6e2b4258c2ff8e4f7efd5829ad532ef58c8",
+  "path_look_address": "0x03110f8ae3d48a079ca2a883926a38ea5e730ada70eccc9f9742dce9f102735e"
 }

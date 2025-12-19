@@ -19,6 +19,9 @@ pub mod PathLook {
     const LABEL_WILL_DY: felt252 = 'WIDY';
     const LABEL_AWA_DX: felt252 = 'AWDX';
     const LABEL_AWA_DY: felt252 = 'AWDY';
+    const RANK_SEED_T: felt252 = 100_u32.into();
+    const RANK_SEED_W: felt252 = 10_u32.into();
+    const RANK_SEED_A: felt252 = 1_u32.into();
 
     #[storage]
     struct Storage {
@@ -44,6 +47,7 @@ pub mod PathLook {
     struct Strand {
         rank: u8,
         path: ByteArray,
+        label: ByteArray,
         r: felt252,
         g: felt252,
         b: felt252,
@@ -57,38 +61,69 @@ pub mod PathLook {
             const WIDTH: u32 = 1024;
             const HEIGHT: u32 = 1024;
 
-            let step_number = self._random_range(token_id, LABEL_STEP_COUNT, 0, 1, 50);
+            let rng_seed = self._rng_seed(token_id, thought_rank, will_rank, awa_rank);
 
-            let sharpness = self._random_range(token_id, LABEL_SHARPNESS, 0, 1, 7);
+            let step_number = self._random_range(rng_seed, LABEL_STEP_COUNT, 0, 1, 50);
+
+            let sharpness = self._random_range(rng_seed, LABEL_SHARPNESS, 0, 1, 20);
 
             let stroke_w = self._max_u32(1, self._round_div(100, step_number));
 
-            let targets = self._find_targets(token_id, WIDTH, HEIGHT, step_number);
+            let (padding, _) = self._compute_padding(rng_seed, WIDTH);
+            let targets = self._find_targets(rng_seed, WIDTH, HEIGHT, step_number, padding);
+            let start = Step { x: 0_i128, y: (HEIGHT / 2_u32).into() };
+            let end = Step { x: WIDTH.into(), y: (HEIGHT / 2_u32).into() };
 
             let mut ideal_steps: Array<Step> = array![];
+            ideal_steps.append(start);
             let mut t_i: usize = 0_usize;
             while t_i < targets.len() {
                 let t = *targets.at(t_i);
                 ideal_steps.append(Step { x: t.x, y: t.y });
                 t_i = t_i + 1_usize;
             }
+            ideal_steps.append(end);
             let raw_ideal_path = self._curve_d(@ideal_steps, sharpness);
             let ideal_path = self._strip_newlines(@raw_ideal_path);
-            let ideal_stroke_w = self._max_u32(1, self._round_div(stroke_w, 2_u32));
+            let ideal_stroke_w = 1_u32;
 
-            let thought_steps = self
-                ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_THOUGHT_DX, LABEL_THOUGHT_DY);
-            let raw_thought_path = self._curve_d(@thought_steps, sharpness);
+            let thought_core =
+                self._find_steps(rng_seed, @targets, WIDTH, HEIGHT, LABEL_THOUGHT_DX, LABEL_THOUGHT_DY);
+            let mut thought_nodes: Array<Step> = array![];
+            thought_nodes.append(start);
+            let mut ti: usize = 0_usize;
+            while ti < thought_core.len() {
+                thought_nodes.append(*thought_core.at(ti));
+                ti = ti + 1_usize;
+            }
+            thought_nodes.append(end);
+            let raw_thought_path = self._curve_d(@thought_nodes, sharpness);
             let thought_path = self._strip_newlines(@raw_thought_path);
 
-            let will_steps = self
-                ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_WILL_DX, LABEL_WILL_DY);
-            let raw_will_path = self._curve_d(@will_steps, sharpness);
+            let will_core =
+                self._find_steps(rng_seed, @targets, WIDTH, HEIGHT, LABEL_WILL_DX, LABEL_WILL_DY);
+            let mut will_nodes: Array<Step> = array![];
+            will_nodes.append(start);
+            let mut wi_i: usize = 0_usize;
+            while wi_i < will_core.len() {
+                will_nodes.append(*will_core.at(wi_i));
+                wi_i = wi_i + 1_usize;
+            }
+            will_nodes.append(end);
+            let raw_will_path = self._curve_d(@will_nodes, sharpness);
             let will_path = self._strip_newlines(@raw_will_path);
 
-            let awa_steps = self
-                ._find_steps(token_id, @targets, WIDTH, HEIGHT, LABEL_AWA_DX, LABEL_AWA_DY);
-            let raw_awa_path = self._curve_d(@awa_steps, sharpness);
+            let awa_core =
+                self._find_steps(rng_seed, @targets, WIDTH, HEIGHT, LABEL_AWA_DX, LABEL_AWA_DY);
+            let mut awa_nodes: Array<Step> = array![];
+            awa_nodes.append(start);
+            let mut aw_i: usize = 0_usize;
+            while aw_i < awa_core.len() {
+                awa_nodes.append(*awa_core.at(aw_i));
+                aw_i = aw_i + 1_usize;
+            }
+            awa_nodes.append(end);
+            let raw_awa_path = self._curve_d(@awa_nodes, sharpness);
             let awa_path = self._strip_newlines(@raw_awa_path);
 
             let mut minted: Array<Strand> = array![];
@@ -99,19 +134,25 @@ pub mod PathLook {
             while r_loop <= 3_u8 {
                 if thought_rank == r_loop {
                     if let Option::Some(path_val) = thought_opt {
-                        minted.append(Strand { rank: thought_rank, path: path_val, r: 0, g: 0, b: 255 });
+                        let mut label: ByteArray = Default::default();
+                        label.append(@"thought");
+                        minted.append(Strand { rank: thought_rank, path: path_val, label, r: 0, g: 0, b: 255 });
                     }
                     thought_opt = Option::None;
                 }
                 if will_rank == r_loop {
                     if let Option::Some(path_val) = will_opt {
-                        minted.append(Strand { rank: will_rank, path: path_val, r: 255, g: 0, b: 0 });
+                        let mut label: ByteArray = Default::default();
+                        label.append(@"will");
+                        minted.append(Strand { rank: will_rank, path: path_val, label, r: 255, g: 0, b: 0 });
                     }
                     will_opt = Option::None;
                 }
                 if awa_rank == r_loop {
                     if let Option::Some(path_val) = awa_opt {
-                        minted.append(Strand { rank: awa_rank, path: path_val, r: 0, g: 255, b: 0 });
+                        let mut label: ByteArray = Default::default();
+                        label.append(@"awa");
+                        minted.append(Strand { rank: awa_rank, path: path_val, label, r: 0, g: 255, b: 0 });
                     }
                     awa_opt = Option::None;
                 }
@@ -120,7 +161,7 @@ pub mod PathLook {
 
             let any_minted = minted.len() > 0_usize;
             let sigma = if any_minted {
-                self._random_range(token_id, LABEL_SHARPNESS, 1, 3, 30)
+                self._random_range(rng_seed, LABEL_SHARPNESS, 1, 3, 30)
             } else {
                 0_u32
             };
@@ -136,14 +177,13 @@ pub mod PathLook {
                 let mut k: usize = 0_usize;
                 while k < minted.len() {
                     let strand = minted.at(k);
-                    let rank = strand.rank;
-                    let rank_u32: u32 = (*rank).into();
                     let path = strand.path;
+                    let id = strand.label;
                     let r: u32 = (*strand.r).try_into().unwrap();
                     let g: u32 = (*strand.g).try_into().unwrap();
                     let b: u32 = (*strand.b).try_into().unwrap();
                     defs.append(@"<g id='strand-");
-                    defs.append(@self._u32_to_string(rank_u32));
+                    defs.append(id);
                     defs.append(@"' filter='url(#lightUp)'><path d='");
                     defs.append(path);
                     defs.append(@"' stroke='rgb(");
@@ -167,20 +207,6 @@ pub mod PathLook {
                 defs.append(@"<feMerge><feMergeNode in='blur'/><feMergeNode in='blur'/><feMergeNode in='SourceGraphic'/></feMerge></filter>");
             }
 
-            let mut uses: ByteArray = Default::default();
-            uses.append(@"<use href='#ideal-src' style='mix-blend-mode:lighten;'/>");
-            if any_minted {
-                let mut u: usize = 0_usize;
-                while u < minted.len() {
-                    let rank = minted.at(u).rank;
-                    let rank_u32: u32 = (*rank).into();
-                    uses.append(@"<use href='#strand-");
-                    uses.append(@self._u32_to_string(rank_u32));
-                    uses.append(@"' style='mix-blend-mode:lighten;'/>");
-                    u = u + 1_usize;
-                }
-            }
-
             let mut svg: ByteArray = Default::default();
             svg.append(@"<svg width='");
             svg.append(@self._u32_to_string(WIDTH));
@@ -196,7 +222,18 @@ pub mod PathLook {
             svg.append(@"</defs>");
             svg.append(@"<rect width='1024' height='1024' fill='#000'/>");
             svg.append(@"<g>");
-            svg.append(@uses);
+            // Draw ideal first so it stays beneath any minted strands.
+            svg.append(@"<use href='#ideal-src' style='mix-blend-mode:lighten;'/>");
+            if any_minted {
+                let mut u: usize = 0_usize;
+                while u < minted.len() {
+                    let id = minted.at(u).label;
+                    svg.append(@"<use href='#strand-");
+                    svg.append(id);
+                    svg.append(@"' style='mix-blend-mode:lighten;'/>");
+                    u = u + 1_usize;
+                }
+            }
             svg.append(@"</g></svg>");
 
             svg
@@ -224,6 +261,7 @@ pub mod PathLook {
             will_rank: u8,
             awa_rank: u8,
         ) -> ByteArray {
+            let rng_seed = self._rng_seed(token_id, thought_rank, will_rank, awa_rank);
             let token_id_str = self._felt_to_string(token_id);
             let thought_minted = thought_rank != 0_u8;
             let will_minted = will_rank != 0_u8;
@@ -232,49 +270,76 @@ pub mod PathLook {
             const WIDTH: u32 = 1024;
             const HEIGHT: u32 = 1024;
 
-            let step_number = self._random_range(token_id, LABEL_STEP_COUNT, 0, 1, 50);
-            let targets = self._find_targets(token_id, WIDTH, HEIGHT, step_number);
-            let point_count = targets.len().try_into().unwrap();
+            let step_number = self._random_range(rng_seed, LABEL_STEP_COUNT, 0, 1, 50);
+            let (padding, pad_pct) = self._compute_padding(rng_seed, WIDTH);
+            let _targets_ignore = self._find_targets(rng_seed, WIDTH, HEIGHT, step_number, padding);
+            let stroke_w = self._max_u32(1, self._round_div(100, step_number));
+            let sharpness = self._random_range(rng_seed, LABEL_SHARPNESS, 0, 1, 20);
+            let any_minted = thought_minted || will_minted || awa_minted;
+            let sigma_val = if any_minted {
+                self._random_range(rng_seed, LABEL_SHARPNESS, 1, 3, 30)
+            } else {
+                0_u32
+            };
             let mut metadata: ByteArray = Default::default();
             let data_uri = self
                 .generate_svg_data_uri(token_id, thought_rank, will_rank, awa_rank);
 
+            let description: ByteArray = "**Steps** sets the cadence; **Voice** sets how loudly the strand speaks.  **Tension** controls how tightly the curve pulls between waypoints.  The **Ideal Path** is the reference trajectory drawn first, always beneath.  The token gains its living strands through three **Movements**: THOUGHT, WILL, and AWA.  **THOUGHT**, **WILL**, and **AWA** record which Movements have appeared (Manifested / Latent).  **Movement Order** preserves the chronology--earlier arrivals remain lower, later arrivals rest on top.  When the first Movement appears, **Breath** awakens as one shared atmosphere across every living strand.";
+
+            let movement_order = self._movement_order(thought_rank, will_rank, awa_rank);
+
             metadata.append(@"{\"name\":\"PATH #");
             metadata.append(@token_id_str);
-            metadata
-                .append(@"\",\"description\":\"PATH NFT with dynamic on-chain SVG\",\"image\":\"");
+            metadata.append(@"\",\"description\":\"");
+            metadata.append(@description);
+            metadata.append(@"\",\"image\":\"");
             metadata.append(@data_uri);
             metadata.append(@"\",\"external_url\":\"https://path.design/token/");
             metadata.append(@token_id_str);
             metadata.append(@"\",\"attributes\":[");
 
-            metadata.append(@"{\"trait_type\":\"Thought Minted\",\"value\":\"");
-            metadata.append(@self._mint_state_string(thought_minted));
+            metadata.append(@"{\"trait_type\":\"Steps\",\"value\":");
+            metadata.append(@self._u32_to_string(step_number));
+            metadata.append(@"},");
+
+            metadata.append(@"{\"trait_type\":\"Voice\",\"value\":");
+            metadata.append(@self._u32_to_string(stroke_w));
+            metadata.append(@"},");
+
+            metadata.append(@"{\"trait_type\":\"Tension\",\"value\":");
+            metadata.append(@self._u32_to_string(sharpness));
+            metadata.append(@"},");
+
+            metadata.append(@"{\"trait_type\":\"Margin\",\"value\":");
+            metadata.append(@self._u32_to_string(pad_pct));
+            metadata.append(@"},");
+
+            metadata.append(@"{\"trait_type\":\"Breath\",\"value\":");
+            if sigma_val == 0_u32 {
+                metadata.append(@"\"Dormant\"");
+            } else {
+                metadata.append(@self._u32_to_string(sigma_val));
+            }
+            metadata.append(@"},");
+
+            metadata.append(@"{\"trait_type\":\"THOUGHT\",\"value\":\"");
+            metadata.append(@self._manifest_string(thought_minted));
             metadata.append(@"\"},");
 
-            metadata.append(@"{\"trait_type\":\"Will Minted\",\"value\":\"");
-            metadata.append(@self._mint_state_string(will_minted));
+            metadata.append(@"{\"trait_type\":\"WILL\",\"value\":\"");
+            metadata.append(@self._manifest_string(will_minted));
             metadata.append(@"\"},");
 
-            metadata.append(@"{\"trait_type\":\"Awa Minted\",\"value\":\"");
-            metadata.append(@self._mint_state_string(awa_minted));
+            metadata.append(@"{\"trait_type\":\"AWA\",\"value\":\"");
+            metadata.append(@self._manifest_string(awa_minted));
             metadata.append(@"\"},");
 
-            metadata.append(@"{\"trait_type\":\"Thought Rank\",\"value\":\"");
-            metadata.append(@self._rank_to_string(thought_rank));
-            metadata.append(@"\"},");
+            metadata.append(@"{\"trait_type\":\"Movement Order\",\"value\":\"");
+            metadata.append(@movement_order);
+            metadata.append(@"\"}");
 
-            metadata.append(@"{\"trait_type\":\"Will Rank\",\"value\":\"");
-            metadata.append(@self._rank_to_string(will_rank));
-            metadata.append(@"\"},");
-
-            metadata.append(@"{\"trait_type\":\"Awa Rank\",\"value\":\"");
-            metadata.append(@self._rank_to_string(awa_rank));
-            metadata.append(@"\"},");
-
-            metadata.append(@"{\"trait_type\":\"Point Count\",\"value\":\"");
-            metadata.append(@self._u32_to_string(point_count));
-            metadata.append(@"\"}]");
+            metadata.append(@"]");
 
             metadata.append(@"}");
 
@@ -284,6 +349,30 @@ pub mod PathLook {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn _rng_seed(
+            self: @ContractState, token_id: felt252, thought_rank: u8, will_rank: u8, awa_rank: u8,
+        ) -> felt252 {
+            let mut seed = token_id * 1000;
+            let th: felt252 = thought_rank.into();
+            let wi: felt252 = will_rank.into();
+            let aw: felt252 = awa_rank.into();
+            seed = seed + th * RANK_SEED_T;
+            seed = seed + wi * RANK_SEED_W;
+            seed = seed + aw * RANK_SEED_A;
+            seed
+        }
+
+        fn _compute_padding(self: @ContractState, seed: felt252, width: u32) -> (u32, u32) {
+            // Margin is 20%–40% of canvas (tunable percentages).
+            const PAD_MIN_PCT: u32 = 20;
+            const PAD_MAX_PCT: u32 = 40;
+            let pad_min = (width * PAD_MIN_PCT) / 100_u32;
+            let pad_max = (width * PAD_MAX_PCT) / 100_u32;
+            let padding = self._random_range(seed, LABEL_PADDING, 0, pad_min, pad_max);
+            let pad_pct = self._round_div(padding * 100_u32, width);
+            (padding, pad_pct)
+        }
+
         fn _random_range(
             self: @ContractState,
             token_id: felt252,
@@ -317,16 +406,15 @@ pub mod PathLook {
             width: u32,
             height: u32,
             count: u32,
+            padding: u32,
         ) -> Array<Step> {
-            let padding = self._random_range(token_id, LABEL_PADDING, 0, 50_u32, 150_u32);
             let max_x: i128 = (width - padding).into();
             let max_y: i128 = (height - padding).into();
             let min_x: i128 = padding.into();
             let min_y: i128 = padding.into();
 
             let mut targets: Array<Step> = array![];
-
-            let mut i: u32 = 0;
+            let mut i: u32 = 0_u32;
             while i < count {
                 let x = self._random_range(token_id, LABEL_TARGET_X, i, min_x.try_into().unwrap(), max_x.try_into().unwrap());
                 let y = self._random_range(token_id, LABEL_TARGET_Y, i, min_y.try_into().unwrap(), max_y.try_into().unwrap());
@@ -346,8 +434,13 @@ pub mod PathLook {
             dx_label: felt252,
             dy_label: felt252,
         ) -> Array<Step> {
-            let max_dx = self._random_range(token_id, LABEL_PADDING, 0, 0_u32, 100);
-            let max_dy = self._random_range(token_id, LABEL_PADDING, 1, 0_u32, 100);
+            // Jitter caps are 1% of the canvas size (tunable).
+            const JITTER_X_PCT: u32 = 1;
+            const JITTER_Y_PCT: u32 = 1;
+            let max_dx_cap: u32 = (max_x * JITTER_X_PCT) / 100_u32;
+            let max_dy_cap: u32 = (max_y * JITTER_Y_PCT) / 100_u32;
+            let max_dx = self._random_range(token_id, LABEL_PADDING, 0, 0_u32, max_dx_cap);
+            let max_dy = self._random_range(token_id, LABEL_PADDING, 1, 0_u32, max_dy_cap);
             let max_x_i128: i128 = max_x.into();
             let max_y_i128: i128 = max_y.into();
 
@@ -490,21 +583,61 @@ pub mod PathLook {
             result
         }
 
-        fn _mint_state_string(self: @ContractState, minted: bool) -> ByteArray {
+        fn _manifest_string(self: @ContractState, minted: bool) -> ByteArray {
             if minted {
-                "Minted"
+                "Manifested"
             } else {
-                "Unminted"
+                "Latent"
             }
         }
 
-        fn _rank_to_string(self: @ContractState, rank: u8) -> ByteArray {
-            if rank == 0_u8 {
-                return "None";
+        fn _movement_order(self: @ContractState, thought_rank: u8, will_rank: u8, awa_rank: u8) -> ByteArray {
+            let mut parts: Array<ByteArray> = array![];
+            let mut r: u8 = 1_u8;
+            while r <= 3_u8 {
+                if thought_rank == r {
+                    let label: ByteArray = "THOUGHT";
+                    parts.append(label);
+                }
+                if will_rank == r {
+                    let label: ByteArray = "WILL";
+                    parts.append(label);
+                }
+                if awa_rank == r {
+                    let label: ByteArray = "AWA";
+                    parts.append(label);
+                }
+                r = r + 1_u8;
             }
 
-            let rank_u32: u32 = rank.into();
-            self._u32_to_string(rank_u32)
+            let mut order: ByteArray = Default::default();
+            let mut i: usize = 0_usize;
+            match parts.len() {
+                0_usize => {
+                    order.append(@"--");
+                },
+                1_usize => {
+                    // Single manifests end with an arrow to imply order start.
+                    order.append(parts.at(0_usize));
+                    order.append(@"->");
+                },
+                2_usize => {
+                    order.append(parts.at(0_usize));
+                    order.append(@"->");
+                    order.append(parts.at(1_usize));
+                    order.append(@"->");
+                },
+                _ => {
+                    while i < parts.len() {
+                        if i > 0_usize {
+                            order.append(@"->");
+                        }
+                        order.append(parts.at(i));
+                        i = i + 1_usize;
+                    }
+                },
+            }
+            order
         }
 
         fn _strip_newlines(self: @ContractState, svg: @ByteArray) -> ByteArray {
