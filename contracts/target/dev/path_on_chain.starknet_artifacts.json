@@ -1,1 +1,0 @@
-{"version":1,"contracts":[{"id":"qqv317lg8vm1i","package_name":"path_on_chain","contract_name":"PATH_SVG","module_path":"path_on_chain::PATH_SVG::PATH_SVG","artifacts":{"sierra":"path_on_chain_PATH_SVG.contract_class.json","casm":"path_on_chain_PATH_SVG.compiled_contract_class.json"}}]}
